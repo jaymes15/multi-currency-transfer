@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: simplebank_postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: simple_bank
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - simplebank_network
+  api:
+    build: 
+      context: .
+      dockerfile: ./dockerfile.dev
+    restart: always
+    ports:
+      - 4000:4000
+    env_file: .env
+    volumes:
+      - .:/app
+    container_name: simplebank_api
+    depends_on:
+      - postgres
+    networks:
+      - simplebank_network
+
+volumes:
+  postgres_data:
+
+networks:
+  simplebank_network:
+    driver: bridge 
