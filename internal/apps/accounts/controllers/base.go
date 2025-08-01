@@ -8,8 +8,8 @@ type AccountController struct {
 	accountService services.AccountServiceInterface
 }
 
-func NewAccountController() *AccountController {
+func NewAccountController(service services.AccountServiceInterface) *AccountController {
 	return &AccountController{
-		accountService: services.NewAccountService(),
+		accountService: service,
 	}
 }

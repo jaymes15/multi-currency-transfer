@@ -8,8 +8,8 @@ type AccountService struct {
 	accountRespository respositories.AccountRespositoryInterface
 }
 
-func NewAccountService() *AccountService {
+func NewAccountService(respository respositories.AccountRespositoryInterface) *AccountService {
 	return &AccountService{
-		accountRespository: respositories.NewAccountRespository(),
+		accountRespository: respository,
 	}
 }

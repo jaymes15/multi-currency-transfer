@@ -11,6 +11,7 @@ RUN go install -mod=mod github.com/githubnemo/CompileDaemon@v1.4.0
 RUN go install github.com/swaggo/swag/cmd/swag@v1.16.3
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+RUN go install go.uber.org/mock/mockgen@latest
 
 COPY . .
 

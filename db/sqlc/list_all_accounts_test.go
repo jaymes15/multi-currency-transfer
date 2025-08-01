@@ -15,38 +15,38 @@ func TestListAllAccounts(t *testing.T) {
 
 	// List all accounts with a higher limit to ensure we get our accounts
 	accounts, err := testQueries.ListAllAccounts(context.Background(), ListAllAccountsParams{
-		Limit:  100,
+		Limit:  1000, // Use a much higher limit to ensure we get all accounts
 		Offset: 0,
 	})
 	require.NoError(t, err)
 	require.NotEmpty(t, accounts)
 
-	// Verify that our created accounts are in the list
-	found1, found2, found3 := false, false, false
+	// Create a map of account IDs for easier lookup
+	accountMap := make(map[int64]Account)
 	for _, account := range accounts {
-		if account.ID == account1.ID {
-			found1 = true
-			require.Equal(t, account1.Owner, account.Owner)
-			require.Equal(t, account1.Balance, account.Balance)
-			require.Equal(t, account1.Currency, account.Currency)
-		}
-		if account.ID == account2.ID {
-			found2 = true
-			require.Equal(t, account2.Owner, account.Owner)
-			require.Equal(t, account2.Balance, account.Balance)
-			require.Equal(t, account2.Currency, account.Currency)
-		}
-		if account.ID == account3.ID {
-			found3 = true
-			require.Equal(t, account3.Owner, account.Owner)
-			require.Equal(t, account3.Balance, account.Balance)
-			require.Equal(t, account3.Currency, account.Currency)
-		}
+		accountMap[account.ID] = account
 	}
 
-	require.True(t, found1, "Account 1 not found in list")
-	require.True(t, found2, "Account 2 not found in list")
-	require.True(t, found3, "Account 3 not found in list")
+	// Verify that our created accounts are in the list
+	require.Contains(t, accountMap, account1.ID, "Account 1 not found in list")
+	require.Contains(t, accountMap, account2.ID, "Account 2 not found in list")
+	require.Contains(t, accountMap, account3.ID, "Account 3 not found in list")
+
+	// Verify the account details
+	foundAccount1 := accountMap[account1.ID]
+	require.Equal(t, account1.Owner, foundAccount1.Owner)
+	require.Equal(t, account1.Balance, foundAccount1.Balance)
+	require.Equal(t, account1.Currency, foundAccount1.Currency)
+
+	foundAccount2 := accountMap[account2.ID]
+	require.Equal(t, account2.Owner, foundAccount2.Owner)
+	require.Equal(t, account2.Balance, foundAccount2.Balance)
+	require.Equal(t, account2.Currency, foundAccount2.Currency)
+
+	foundAccount3 := accountMap[account3.ID]
+	require.Equal(t, account3.Owner, foundAccount3.Owner)
+	require.Equal(t, account3.Balance, foundAccount3.Balance)
+	require.Equal(t, account3.Currency, foundAccount3.Currency)
 }
 
 func TestListAllAccountsWithLimit(t *testing.T) {

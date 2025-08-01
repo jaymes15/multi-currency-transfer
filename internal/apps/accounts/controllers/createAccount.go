@@ -41,7 +41,7 @@ func (accountController *AccountController) CreateAccountController(c *gin.Conte
 		"account": account,
 	}
 
-	err = responseHandler.WriteJSON(c.Writer, http.StatusOK, response, nil)
+	err = responseHandler.WriteJSON(c.Writer, http.StatusCreated, response, nil)
 	if err != nil {
 		config.Logger.Error("Failed to write JSON response", "error", err.Error())
 		errorResponse.ServerErrorResponse(c, err)
