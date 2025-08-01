@@ -36,7 +36,7 @@ type ListTransfersRow struct {
 }
 
 func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([]ListTransfersRow, error) {
-	rows, err := q.query(ctx, q.listTransfersStmt, listTransfers,
+	rows, err := q.db.Query(ctx, listTransfers,
 		arg.FromAccountID,
 		arg.ToAccountID,
 		arg.Limit,
@@ -59,9 +59,6 @@ func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

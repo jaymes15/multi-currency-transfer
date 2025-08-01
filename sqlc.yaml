@@ -7,7 +7,7 @@ sql:
     go: 
       package: "db"
       out: "db/sqlc"
-      sql_package: "database/sql"
+      sql_package: "pgx/v5"
       emit_json_tags: true        # Adds `json` tags to struct fields
       emit_interface: true        # Generates interfaces for mocking
       emit_empty_slices: true     # [] instead of nil when no rows

@@ -1,17 +1,17 @@
 package db
 
 import (
-	"database/sql"
 	"lemfi/simplebank/config"
 	"lemfi/simplebank/db"
 	"os"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-var testQueries *Queries
-var testDB *sql.DB
+var testQueries Store
+var testDB *pgxpool.Pool
 
 func TestMain(m *testing.M) {
 	// Load environment variables
@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
 	testDB = db.GetPostgresDBConnection()
 
 	// Create queries instance
-	testQueries = New(testDB)
+	testQueries = NewStore(testDB)
 
 	os.Exit(m.Run())
 }

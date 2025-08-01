@@ -24,7 +24,7 @@ type GetTransferRow struct {
 }
 
 func (q *Queries) GetTransfer(ctx context.Context, id int64) (GetTransferRow, error) {
-	row := q.queryRow(ctx, q.getTransferStmt, getTransfer, id)
+	row := q.db.QueryRow(ctx, getTransfer, id)
 	var i GetTransferRow
 	err := row.Scan(
 		&i.ID,

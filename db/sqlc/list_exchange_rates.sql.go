@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const listExchangeRates = `-- name: ListExchangeRates :many
@@ -16,15 +17,15 @@ ORDER BY from_currency, to_currency
 `
 
 type ListExchangeRatesRow struct {
-	ID           int64        `json:"id"`
-	FromCurrency string       `json:"from_currency"`
-	ToCurrency   string       `json:"to_currency"`
-	Rate         float64      `json:"rate"`
-	CreatedAt    sql.NullTime `json:"created_at"`
+	ID           int64              `json:"id"`
+	FromCurrency string             `json:"from_currency"`
+	ToCurrency   string             `json:"to_currency"`
+	Rate         float64            `json:"rate"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) ListExchangeRates(ctx context.Context) ([]ListExchangeRatesRow, error) {
-	rows, err := q.query(ctx, q.listExchangeRatesStmt, listExchangeRates)
+	rows, err := q.db.Query(ctx, listExchangeRates)
 	if err != nil {
 		return nil, err
 	}
@@ -42,9 +43,6 @@ func (q *Queries) ListExchangeRates(ctx context.Context) ([]ListExchangeRatesRow
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

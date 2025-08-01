@@ -22,7 +22,7 @@ type UpdateAccountParams struct {
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
-	row := q.queryRow(ctx, q.updateAccountStmt, updateAccount, arg.ID, arg.Balance)
+	row := q.db.QueryRow(ctx, updateAccount, arg.ID, arg.Balance)
 	var i Account
 	err := row.Scan(
 		&i.ID,

@@ -22,7 +22,7 @@ type AddAccountBalanceParams struct {
 }
 
 func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (int64, error) {
-	row := q.queryRow(ctx, q.addAccountBalanceStmt, addAccountBalance, arg.Amount, arg.ID)
+	row := q.db.QueryRow(ctx, addAccountBalance, arg.Amount, arg.ID)
 	var balance int64
 	err := row.Scan(&balance)
 	return balance, err

@@ -13,9 +13,9 @@ func TestListAllAccounts(t *testing.T) {
 	account2 := createRandomAccount(t)
 	account3 := createRandomAccount(t)
 
-	// List all accounts
+	// List all accounts with a higher limit to ensure we get our accounts
 	accounts, err := testQueries.ListAllAccounts(context.Background(), ListAllAccountsParams{
-		Limit:  10,
+		Limit:  100,
 		Offset: 0,
 	})
 	require.NoError(t, err)

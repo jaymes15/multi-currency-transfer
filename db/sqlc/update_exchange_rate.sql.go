@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const updateExchangeRate = `-- name: UpdateExchangeRate :one
@@ -18,21 +19,21 @@ RETURNING id, from_currency, to_currency, rate::float8, created_at
 `
 
 type UpdateExchangeRateParams struct {
-	FromCurrency string `json:"from_currency"`
-	ToCurrency   string `json:"to_currency"`
-	Rate         string `json:"rate"`
+	FromCurrency string         `json:"from_currency"`
+	ToCurrency   string         `json:"to_currency"`
+	Rate         pgtype.Numeric `json:"rate"`
 }
 
 type UpdateExchangeRateRow struct {
-	ID           int64        `json:"id"`
-	FromCurrency string       `json:"from_currency"`
-	ToCurrency   string       `json:"to_currency"`
-	Rate         float64      `json:"rate"`
-	CreatedAt    sql.NullTime `json:"created_at"`
+	ID           int64              `json:"id"`
+	FromCurrency string             `json:"from_currency"`
+	ToCurrency   string             `json:"to_currency"`
+	Rate         float64            `json:"rate"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) UpdateExchangeRate(ctx context.Context, arg UpdateExchangeRateParams) (UpdateExchangeRateRow, error) {
-	row := q.queryRow(ctx, q.updateExchangeRateStmt, updateExchangeRate, arg.FromCurrency, arg.ToCurrency, arg.Rate)
+	row := q.db.QueryRow(ctx, updateExchangeRate, arg.FromCurrency, arg.ToCurrency, arg.Rate)
 	var i UpdateExchangeRateRow
 	err := row.Scan(
 		&i.ID,

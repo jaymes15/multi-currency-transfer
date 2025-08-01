@@ -7,8 +7,9 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
@@ -28,9 +29,9 @@ type CreateTransferParams struct {
 	FromAccountID int64          `json:"from_account_id"`
 	ToAccountID   int64          `json:"to_account_id"`
 	Amount        int64          `json:"amount"`
-	ExchangeRate  sql.NullString `json:"exchange_rate"`
-	FromCurrency  sql.NullString `json:"from_currency"`
-	ToCurrency    sql.NullString `json:"to_currency"`
+	ExchangeRate  pgtype.Numeric `json:"exchange_rate"`
+	FromCurrency  pgtype.Text    `json:"from_currency"`
+	ToCurrency    pgtype.Text    `json:"to_currency"`
 }
 
 type CreateTransferRow struct {
@@ -38,14 +39,14 @@ type CreateTransferRow struct {
 	FromAccountID int64          `json:"from_account_id"`
 	ToAccountID   int64          `json:"to_account_id"`
 	Amount        int64          `json:"amount"`
-	ExchangeRate  sql.NullString `json:"exchange_rate"`
-	FromCurrency  sql.NullString `json:"from_currency"`
-	ToCurrency    sql.NullString `json:"to_currency"`
+	ExchangeRate  pgtype.Numeric `json:"exchange_rate"`
+	FromCurrency  pgtype.Text    `json:"from_currency"`
+	ToCurrency    pgtype.Text    `json:"to_currency"`
 	CreatedAt     time.Time      `json:"created_at"`
 }
 
 func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (CreateTransferRow, error) {
-	row := q.queryRow(ctx, q.createTransferStmt, createTransfer,
+	row := q.db.QueryRow(ctx, createTransfer,
 		arg.FromAccountID,
 		arg.ToAccountID,
 		arg.Amount,

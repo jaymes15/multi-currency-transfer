@@ -2,10 +2,10 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"testing"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
 
 	"lemfi/simplebank/util"
@@ -60,9 +60,9 @@ func createRandomTransfer(t *testing.T) CreateTransferRow {
 		FromAccountID: fromAccount.ID,
 		ToAccountID:   toAccount.ID,
 		Amount:        util.RandomMoney(),
-		ExchangeRate:  sql.NullString{String: "", Valid: false},
-		FromCurrency:  sql.NullString{String: "", Valid: false},
-		ToCurrency:    sql.NullString{String: "", Valid: false},
+		ExchangeRate:  pgtype.Numeric{},
+		FromCurrency:  pgtype.Text{},
+		ToCurrency:    pgtype.Text{},
 	}
 
 	transfer, err := testQueries.CreateTransfer(context.Background(), arg)
@@ -107,10 +107,14 @@ func createRandomExchangeRate(t *testing.T) CreateExchangeRateRow {
 
 	// Create new exchange rate
 	rate := util.RandomFloat(0.1, 5000.0)
+
+	var numericRate pgtype.Numeric
+	numericRate.Scan(fmt.Sprintf("%.8f", rate))
+
 	arg := CreateExchangeRateParams{
 		FromCurrency: fromCurrency,
 		ToCurrency:   toCurrency,
-		Rate:         fmt.Sprintf("%.8f", rate),
+		Rate:         numericRate,
 	}
 
 	exchangeRate, err := testQueries.CreateExchangeRate(context.Background(), arg)

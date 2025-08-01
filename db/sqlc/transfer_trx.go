@@ -2,7 +2,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // TransferTxParams contains the input parameters of the transfer transaction
@@ -23,7 +24,7 @@ type TransferTxResult struct {
 
 // TransferTx performs a money transfer from one account to the other.
 // It creates the transfer, add account entries, and update accounts' balance within a database transaction
-func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
+func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (TransferTxResult, error) {
 	var result TransferTxResult
 
 	err := store.execTx(ctx, func(q *Queries) error {
@@ -33,9 +34,9 @@ func (store *Store) TransferTx(ctx context.Context, arg TransferTxParams) (Trans
 			FromAccountID: arg.FromAccountID,
 			ToAccountID:   arg.ToAccountID,
 			Amount:        arg.Amount,
-			ExchangeRate:  sql.NullString{String: "", Valid: false},
-			FromCurrency:  sql.NullString{String: "", Valid: false},
-			ToCurrency:    sql.NullString{String: "", Valid: false},
+			ExchangeRate:  pgtype.Numeric{},
+			FromCurrency:  pgtype.Text{},
+			ToCurrency:    pgtype.Text{},
 		})
 		if err != nil {
 			return err

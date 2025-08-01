@@ -2,39 +2,41 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// Store provides all functions to execute SQL queries and transactions
-type Store struct {
-	db *sql.DB
+// SQLStore provides all functions to execute SQL queries and transactions
+type SQLStore struct {
+	connPool *pgxpool.Pool
 	*Queries
 }
 
 // NewStore creates a new store
-func NewStore(db *sql.DB) *Store {
-	return &Store{
-		db:      db,
-		Queries: New(db),
+func NewStore(connPool *pgxpool.Pool) Store {
+	return &SQLStore{
+		connPool: connPool,
+		Queries:  New(connPool),
 	}
 }
-
-func (store *Store) execTx(ctx context.Context, fn func(*Queries) error) error {
-	tx, err := store.db.BeginTx(ctx, nil)
+func (store *SQLStore) execTx(ctx context.Context, fn func(*Queries) error) error {
+	tx, err := store.connPool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer tx.Rollback(ctx)
 
-	q := New(tx)
+	q := New(tx) // tx implements the same interface as pgxpool.Pool for Queries
 
 	err = fn(q)
 	if err != nil {
-		if rbErr := tx.Rollback(); rbErr != nil {
+		if rbErr := tx.Rollback(ctx); rbErr != nil {
 			return fmt.Errorf("tx err: %v, rb err: %v", err, rbErr)
 		}
 		return err
 	}
-	return tx.Commit()
+
+	return tx.Commit(ctx)
 }

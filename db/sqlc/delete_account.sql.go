@@ -15,6 +15,6 @@ WHERE id = $1
 `
 
 func (q *Queries) DeleteAccount(ctx context.Context, id int64) error {
-	_, err := q.exec(ctx, q.deleteAccountStmt, deleteAccount, id)
+	_, err := q.db.Exec(ctx, deleteAccount, id)
 	return err
 }

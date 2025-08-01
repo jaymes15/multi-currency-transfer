@@ -5,8 +5,9 @@
 package db
 
 import (
-	"database/sql"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Account struct {
@@ -26,11 +27,11 @@ type Entry struct {
 }
 
 type ExchangeRate struct {
-	ID           int64        `json:"id"`
-	FromCurrency string       `json:"from_currency"`
-	ToCurrency   string       `json:"to_currency"`
-	Rate         string       `json:"rate"`
-	CreatedAt    sql.NullTime `json:"created_at"`
+	ID           int64              `json:"id"`
+	FromCurrency string             `json:"from_currency"`
+	ToCurrency   string             `json:"to_currency"`
+	Rate         pgtype.Numeric     `json:"rate"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
 type Transfer struct {
@@ -40,7 +41,7 @@ type Transfer struct {
 	// must be positive
 	Amount       int64          `json:"amount"`
 	CreatedAt    time.Time      `json:"created_at"`
-	ExchangeRate sql.NullString `json:"exchange_rate"`
-	FromCurrency sql.NullString `json:"from_currency"`
-	ToCurrency   sql.NullString `json:"to_currency"`
+	ExchangeRate pgtype.Numeric `json:"exchange_rate"`
+	FromCurrency pgtype.Text    `json:"from_currency"`
+	ToCurrency   pgtype.Text    `json:"to_currency"`
 }

@@ -1,7 +1,7 @@
 package db
 
-import "database/sql"
+import "github.com/jackc/pgx/v5/pgxpool"
 
-func GetPostgresDBConnection() *sql.DB {
+func GetPostgresDBConnection() *pgxpool.Pool {
 	return PostgresDB
 }

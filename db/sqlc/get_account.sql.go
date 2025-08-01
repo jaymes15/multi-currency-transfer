@@ -15,7 +15,7 @@ WHERE id = $1 LIMIT 1
 `
 
 func (q *Queries) GetAccount(ctx context.Context, id int64) (Account, error) {
-	row := q.queryRow(ctx, q.getAccountStmt, getAccount, id)
+	row := q.db.QueryRow(ctx, getAccount, id)
 	var i Account
 	err := row.Scan(
 		&i.ID,

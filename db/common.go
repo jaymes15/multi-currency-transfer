@@ -1,5 +1,5 @@
 package db
 
-import "database/sql"
+import "github.com/jackc/pgx/v5/pgxpool"
 
-var PostgresDB *sql.DB
+var PostgresDB *pgxpool.Pool

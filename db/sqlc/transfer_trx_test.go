@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"lemfi/simplebank/util"
-
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
+
+	"lemfi/simplebank/util"
 )
 
 func TestTransferTx(t *testing.T) {
@@ -215,10 +216,14 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	if err != nil {
 		// Exchange rate doesn't exist, create a new one
 		rate := util.RandomFloat(0.1, 5000.0)
+
+		var numericRate pgtype.Numeric
+		numericRate.Scan(fmt.Sprintf("%.8f", rate))
+
 		exchangeRateArg := CreateExchangeRateParams{
 			FromCurrency: account1.Currency,
 			ToCurrency:   account2.Currency,
-			Rate:         fmt.Sprintf("%.8f", rate),
+			Rate:         numericRate,
 		}
 
 		createdRate, err := testQueries.CreateExchangeRate(context.Background(), exchangeRateArg)

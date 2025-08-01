@@ -22,7 +22,7 @@ type ListAllAccountsParams struct {
 }
 
 func (q *Queries) ListAllAccounts(ctx context.Context, arg ListAllAccountsParams) ([]Account, error) {
-	rows, err := q.query(ctx, q.listAllAccountsStmt, listAllAccounts, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listAllAccounts, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -40,9 +40,6 @@ func (q *Queries) ListAllAccounts(ctx context.Context, arg ListAllAccountsParams
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

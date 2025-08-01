@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createExchangeRate = `-- name: CreateExchangeRate :one
@@ -21,21 +22,21 @@ INSERT INTO exchange_rates (
 `
 
 type CreateExchangeRateParams struct {
-	FromCurrency string `json:"from_currency"`
-	ToCurrency   string `json:"to_currency"`
-	Rate         string `json:"rate"`
+	FromCurrency string         `json:"from_currency"`
+	ToCurrency   string         `json:"to_currency"`
+	Rate         pgtype.Numeric `json:"rate"`
 }
 
 type CreateExchangeRateRow struct {
-	ID           int64        `json:"id"`
-	FromCurrency string       `json:"from_currency"`
-	ToCurrency   string       `json:"to_currency"`
-	Rate         float64      `json:"rate"`
-	CreatedAt    sql.NullTime `json:"created_at"`
+	ID           int64              `json:"id"`
+	FromCurrency string             `json:"from_currency"`
+	ToCurrency   string             `json:"to_currency"`
+	Rate         float64            `json:"rate"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (CreateExchangeRateRow, error) {
-	row := q.queryRow(ctx, q.createExchangeRateStmt, createExchangeRate, arg.FromCurrency, arg.ToCurrency, arg.Rate)
+	row := q.db.QueryRow(ctx, createExchangeRate, arg.FromCurrency, arg.ToCurrency, arg.Rate)
 	var i CreateExchangeRateRow
 	err := row.Scan(
 		&i.ID,

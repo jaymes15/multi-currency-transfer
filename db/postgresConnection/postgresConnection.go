@@ -2,54 +2,46 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"lemfi/simplebank/config"
 	"time"
 
-	_ "github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ConnectToPostgresDb() (*sql.DB, error) {
-	// Use sql.Open() to create an empty connection pool, using the DSN from the config
-	// struct.
+func ConnectToPostgresDb() (*pgxpool.Pool, error) {
 	config.Logger.Info("Connecting to Database")
 	configs := config.Get()
-	db, err := sql.Open("postgres", configs.Db.Dsn)
-	if err != nil {
-		return nil, err
-	}
 
-	// Set the maximum number of open (in-use + idle) connections in the pool. Note that
-	// passing a value less than or equal to 0 will mean there is no limit.
-	db.SetMaxOpenConns(configs.Db.MaxOpenConns)
-
-	// Set the maximum number of idle connections in the pool. Again, passing a value
-	// less than or equal to 0 will mean there is no limit.
-	db.SetMaxIdleConns(configs.Db.MaxIdleConns)
-
-	// Set the maximum idle timeout for connections in the pool. Passing a duration less
-	// than or equal to 0 will mean that connections are not closed due to their idle time.
-	db.SetConnMaxIdleTime(configs.Db.MaxIdleTime)
-
-	// Create a context with a 5-second timeout deadline.
+	// Create a context with a timeout for connection
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Use PingContext() to establish a new connection to the database, passing in the
-	// context we created above as a parameter. If the connection couldn't be
-	// established successfully within the 5 second deadline, then this will return an
-	// error. If we get this error, or any other, we close the connection pool and
-	// return the error.
-	err = db.PingContext(ctx)
+	// Parse the pgxpool config from the DSN
+	pgxConfig, err := pgxpool.ParseConfig(configs.Db.Dsn)
 	if err != nil {
-		config.Logger.Error(err.Error())
-		db.Close()
+		config.Logger.Error("Failed to parse database DSN: " + err.Error())
 		return nil, err
 	}
 
-	config.Logger.Info("Sucessfully  connected to Database")
+	// Apply pool settings
+	pgxConfig.MaxConns = int32(configs.Db.MaxOpenConns) // MaxOpenConns in your config
+	pgxConfig.MinConns = int32(configs.Db.MaxIdleConns) // MaxIdleConns in your config
+	pgxConfig.MaxConnIdleTime = configs.Db.MaxIdleTime  // time.Duration
 
-	// Return the sql.DB connection pool.
-	return db, nil
+	// Connect to the database
+	dbpool, err := pgxpool.NewWithConfig(ctx, pgxConfig)
+	if err != nil {
+		config.Logger.Error("Failed to connect to database: " + err.Error())
+		return nil, err
+	}
 
+	// Ping to ensure connection is working
+	if err := dbpool.Ping(ctx); err != nil {
+		config.Logger.Error("Database ping failed: " + err.Error())
+		dbpool.Close()
+		return nil, err
+	}
+
+	config.Logger.Info("Successfully connected to Database")
+	return dbpool, nil
 }

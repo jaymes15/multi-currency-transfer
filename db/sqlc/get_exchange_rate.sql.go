@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getExchangeRate = `-- name: GetExchangeRate :one
@@ -22,15 +23,15 @@ type GetExchangeRateParams struct {
 }
 
 type GetExchangeRateRow struct {
-	ID           int64        `json:"id"`
-	FromCurrency string       `json:"from_currency"`
-	ToCurrency   string       `json:"to_currency"`
-	Rate         float64      `json:"rate"`
-	CreatedAt    sql.NullTime `json:"created_at"`
+	ID           int64              `json:"id"`
+	FromCurrency string             `json:"from_currency"`
+	ToCurrency   string             `json:"to_currency"`
+	Rate         float64            `json:"rate"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
 func (q *Queries) GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (GetExchangeRateRow, error) {
-	row := q.queryRow(ctx, q.getExchangeRateStmt, getExchangeRate, arg.FromCurrency, arg.ToCurrency)
+	row := q.db.QueryRow(ctx, getExchangeRate, arg.FromCurrency, arg.ToCurrency)
 	var i GetExchangeRateRow
 	err := row.Scan(
 		&i.ID,
