@@ -1,11 +1,15 @@
 package accounts
 
+import (
+	services "lemfi/simplebank/internal/apps/accounts/services"
+)
+
 type AccountController struct {
-	//AccountService AccountServiceInterface
+	accountService services.AccountServiceInterface
 }
 
 func NewAccountController() *AccountController {
 	return &AccountController{
-		//AccountService: NewAccountService(),
+		accountService: services.NewAccountService(),
 	}
 }

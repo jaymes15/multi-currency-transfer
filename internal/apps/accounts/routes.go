@@ -11,5 +11,6 @@ func Routes(router *gin.Engine) {
 	accountController := accounts.NewAccountController()
 
 	router.POST("/api/v1/accounts", accountController.CreateAccountController)
+	router.GET("/api/v1/accounts", accountController.GetAccountsController)
 
 }

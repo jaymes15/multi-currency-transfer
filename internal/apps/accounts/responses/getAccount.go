@@ -2,8 +2,8 @@ package accounts
 
 import "time"
 
-type CreateAccountResponse struct {
-	ID        string    `json:"id"`
+type GetAccountResponse struct {
+	ID        int64     `json:"id"`
 	Owner     string    `json:"owner"`
 	Balance   int64     `json:"balance"`
 	Currency  string    `json:"currency"`

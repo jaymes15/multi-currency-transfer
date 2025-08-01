@@ -1,6 +1,7 @@
 package accounts
 
 import (
+	"lemfi/simplebank/config"
 	"net/http"
 
 	errorResponse "lemfi/simplebank/pkg/errorResponse"
@@ -14,21 +15,38 @@ import (
 )
 
 func (accountController *AccountController) CreateAccountController(c *gin.Context) {
+	config.Logger.Info("Creating new account", "method", "POST", "endpoint", "/accounts")
+
 	var req requests.CreateAccountRequest
 
 	err := requestHandler.ReadJSONGin(c, &req, accountValidation.CreateAccountValidationMessages)
 	if err != nil {
+		config.Logger.Error("Failed to read account request", "error", err.Error())
 		errorResponse.BadRequestResponse(c, err)
 		return
 	}
 
-	data := responseHandler.Envelope{
-		"account": "Account created successfully",
-	}
+	config.Logger.Info("Account request validated successfully", "owner", req.Owner, "currency", req.Currency)
 
-	err = responseHandler.WriteJSON(c.Writer, http.StatusOK, data, nil)
+	account, err := accountController.accountService.CreateAccount(req)
 	if err != nil {
+		config.Logger.Error("Failed to create account", "error", err.Error(), "owner", req.Owner)
 		errorResponse.ServerErrorResponse(c, err)
 		return
 	}
+
+	config.Logger.Info("Account created successfully", "accountID", account.ID, "owner", account.Owner, "currency", account.Currency)
+
+	response := responseHandler.Envelope{
+		"account": account,
+	}
+
+	err = responseHandler.WriteJSON(c.Writer, http.StatusOK, response, nil)
+	if err != nil {
+		config.Logger.Error("Failed to write JSON response", "error", err.Error())
+		errorResponse.ServerErrorResponse(c, err)
+		return
+	}
+
+	config.Logger.Info("Account creation completed successfully", "accountID", account.ID)
 }
