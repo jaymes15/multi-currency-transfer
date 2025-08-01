@@ -1,4 +1,4 @@
-package helpers
+package requestHandler
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator"
 )
 
@@ -20,6 +21,36 @@ func ReadJSON(w http.ResponseWriter, r *http.Request, dst interface{}, customMes
 
 	// Decode the JSON request body into the destination struct.
 	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+
+	err := dec.Decode(dst)
+	if err != nil {
+		return handleJSONDecodeError(err)
+	}
+
+	// Validate the decoded struct using go-playground/validator.
+	err = validate.Struct(dst)
+	if err != nil {
+		if validationErrors, ok := err.(validator.ValidationErrors); ok {
+			// If no custom messages provided, use empty map
+			if customMessages == nil {
+				customMessages = map[string]string{}
+			}
+			return handleValidationErrors(validationErrors, customMessages)
+		}
+		return fmt.Errorf("validation failed: %w", err)
+	}
+
+	return nil
+}
+
+// ReadJSONGin decodes JSON into the given destination and validates it using go-playground/validator for Gin.
+func ReadJSONGin(c *gin.Context, dst interface{}, customMessages map[string]string) error {
+	maxBytes := 1_048_576 // Set a limit for the request body size.
+	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, int64(maxBytes))
+
+	// Decode the JSON request body into the destination struct.
+	dec := json.NewDecoder(c.Request.Body)
 	dec.DisallowUnknownFields()
 
 	err := dec.Decode(dst)
