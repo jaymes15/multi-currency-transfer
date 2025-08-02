@@ -8,7 +8,7 @@ package db
 import (
 	"context"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 const createExchangeRate = `-- name: CreateExchangeRate :one
@@ -18,26 +18,18 @@ INSERT INTO exchange_rates (
   rate
 ) VALUES (
   $1, $2, $3
-) RETURNING id, from_currency, to_currency, rate::float8, created_at
+) RETURNING id, from_currency, to_currency, rate, created_at
 `
 
 type CreateExchangeRateParams struct {
-	FromCurrency string         `json:"from_currency"`
-	ToCurrency   string         `json:"to_currency"`
-	Rate         pgtype.Numeric `json:"rate"`
+	FromCurrency string          `json:"from_currency"`
+	ToCurrency   string          `json:"to_currency"`
+	Rate         decimal.Decimal `json:"rate"`
 }
 
-type CreateExchangeRateRow struct {
-	ID           int64              `json:"id"`
-	FromCurrency string             `json:"from_currency"`
-	ToCurrency   string             `json:"to_currency"`
-	Rate         float64            `json:"rate"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (CreateExchangeRateRow, error) {
+func (q *Queries) CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (ExchangeRate, error) {
 	row := q.db.QueryRow(ctx, createExchangeRate, arg.FromCurrency, arg.ToCurrency, arg.Rate)
-	var i CreateExchangeRateRow
+	var i ExchangeRate
 	err := row.Scan(
 		&i.ID,
 		&i.FromCurrency,

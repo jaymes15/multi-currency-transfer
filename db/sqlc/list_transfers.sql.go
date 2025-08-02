@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const listTransfers = `-- name: ListTransfers :many
@@ -28,11 +30,11 @@ type ListTransfersParams struct {
 }
 
 type ListTransfersRow struct {
-	ID            int64     `json:"id"`
-	FromAccountID int64     `json:"from_account_id"`
-	ToAccountID   int64     `json:"to_account_id"`
-	Amount        int64     `json:"amount"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            int64           `json:"id"`
+	FromAccountID int64           `json:"from_account_id"`
+	ToAccountID   int64           `json:"to_account_id"`
+	Amount        decimal.Decimal `json:"amount"`
+	CreatedAt     time.Time       `json:"created_at"`
 }
 
 func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([]ListTransfersRow, error) {

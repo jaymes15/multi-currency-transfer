@@ -1,10 +1,14 @@
 package transfers
 
 import (
+	"errors"
+
 	"lemfi/simplebank/config"
 	db "lemfi/simplebank/db/sqlc"
 	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
 	requests "lemfi/simplebank/internal/apps/transfers/requests"
+
+	"github.com/shopspring/decimal"
 )
 
 func (transferRespository *TransferRespository) MakeTransfer(payload requests.MakeTransferRequest) (db.TransferTxResult, error) {
@@ -39,15 +43,43 @@ func (transferRespository *TransferRespository) MakeTransfer(payload requests.Ma
 	}
 
 	// Validate sufficient balance
-	if fromAccount.Balance < payload.Amount {
+	if fromAccount.Balance.LessThan(payload.Amount) {
 		return db.TransferTxResult{}, transferErrors.ErrInsufficientBalance
+	}
+
+	// Calculate converted amount and exchange rate
+	convertedAmount := payload.Amount
+	exchangeRate := decimal.NewFromInt(1) // Default to 1:1 for same currency
+
+	// Calculate exchange rate for cross-currency transfers
+	if payload.FromCurrency != payload.ToCurrency {
+		// Get exchange rate from database
+		rate, err := transferRespository.queries.GetExchangeRate(transferRespository.context, db.GetExchangeRateParams{
+			FromCurrency: payload.FromCurrency,
+			ToCurrency:   payload.ToCurrency,
+		})
+		if err != nil {
+			config.Logger.Error("Failed to get exchange rate",
+				"from_currency", payload.FromCurrency,
+				"to_currency", payload.ToCurrency,
+				"error", err.Error(),
+			)
+			return db.TransferTxResult{}, errors.New("exchange rate not found for currency pair")
+		}
+
+		exchangeRate = rate.Rate
+		convertedAmount = payload.Amount.Mul(exchangeRate).Round(2)
 	}
 
 	// Prepare transfer parameters
 	transferParams := db.TransferTxParams{
-		FromAccountID: payload.FromAccountID,
-		ToAccountID:   payload.ToAccountID,
-		Amount:        payload.Amount,
+		FromAccountID:   payload.FromAccountID,
+		ToAccountID:     payload.ToAccountID,
+		Amount:          payload.Amount,
+		ConvertedAmount: convertedAmount,
+		ExchangeRate:    exchangeRate,
+		FromCurrency:    payload.FromCurrency,
+		ToCurrency:      payload.ToCurrency,
 	}
 
 	// Execute the transfer transaction

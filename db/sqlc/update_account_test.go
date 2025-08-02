@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 
 	"lemfi/simplebank/util"
@@ -13,9 +14,11 @@ import (
 func TestUpdateAccount(t *testing.T) {
 	account1 := createRandomAccount(t)
 
+	balance := decimal.NewFromFloat(util.RandomFloat(10.0, 1000.0)).Round(2)
+
 	arg := UpdateAccountParams{
 		ID:      account1.ID,
-		Balance: util.RandomMoney(),
+		Balance: balance,
 	}
 
 	account2, err := testQueries.UpdateAccount(context.Background(), arg)

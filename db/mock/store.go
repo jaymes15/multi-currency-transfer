@@ -14,6 +14,7 @@ import (
 	db "lemfi/simplebank/db/sqlc"
 	reflect "reflect"
 
+	decimal "github.com/shopspring/decimal"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -42,10 +43,10 @@ func (m *MockStore) EXPECT() *MockStoreMockRecorder {
 }
 
 // AddAccountBalance mocks base method.
-func (m *MockStore) AddAccountBalance(ctx context.Context, arg db.AddAccountBalanceParams) (int64, error) {
+func (m *MockStore) AddAccountBalance(ctx context.Context, arg db.AddAccountBalanceParams) (decimal.Decimal, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "AddAccountBalance", ctx, arg)
-	ret0, _ := ret[0].(int64)
+	ret0, _ := ret[0].(decimal.Decimal)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -87,10 +88,10 @@ func (mr *MockStoreMockRecorder) CreateEntry(ctx, arg any) *gomock.Call {
 }
 
 // CreateExchangeRate mocks base method.
-func (m *MockStore) CreateExchangeRate(ctx context.Context, arg db.CreateExchangeRateParams) (db.CreateExchangeRateRow, error) {
+func (m *MockStore) CreateExchangeRate(ctx context.Context, arg db.CreateExchangeRateParams) (db.ExchangeRate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateExchangeRate", ctx, arg)
-	ret0, _ := ret[0].(db.CreateExchangeRateRow)
+	ret0, _ := ret[0].(db.ExchangeRate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -102,10 +103,10 @@ func (mr *MockStoreMockRecorder) CreateExchangeRate(ctx, arg any) *gomock.Call {
 }
 
 // CreateTransfer mocks base method.
-func (m *MockStore) CreateTransfer(ctx context.Context, arg db.CreateTransferParams) (db.CreateTransferRow, error) {
+func (m *MockStore) CreateTransfer(ctx context.Context, arg db.CreateTransferParams) (db.Transfer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTransfer", ctx, arg)
-	ret0, _ := ret[0].(db.CreateTransferRow)
+	ret0, _ := ret[0].(db.Transfer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -176,10 +177,10 @@ func (mr *MockStoreMockRecorder) GetEntry(ctx, id any) *gomock.Call {
 }
 
 // GetExchangeRate mocks base method.
-func (m *MockStore) GetExchangeRate(ctx context.Context, arg db.GetExchangeRateParams) (db.GetExchangeRateRow, error) {
+func (m *MockStore) GetExchangeRate(ctx context.Context, arg db.GetExchangeRateParams) (db.ExchangeRate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetExchangeRate", ctx, arg)
-	ret0, _ := ret[0].(db.GetExchangeRateRow)
+	ret0, _ := ret[0].(db.ExchangeRate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -251,10 +252,10 @@ func (mr *MockStoreMockRecorder) ListEntries(ctx, arg any) *gomock.Call {
 }
 
 // ListExchangeRates mocks base method.
-func (m *MockStore) ListExchangeRates(ctx context.Context) ([]db.ListExchangeRatesRow, error) {
+func (m *MockStore) ListExchangeRates(ctx context.Context) ([]db.ExchangeRate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListExchangeRates", ctx)
-	ret0, _ := ret[0].([]db.ListExchangeRatesRow)
+	ret0, _ := ret[0].([]db.ExchangeRate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -311,10 +312,10 @@ func (mr *MockStoreMockRecorder) UpdateAccount(ctx, arg any) *gomock.Call {
 }
 
 // UpdateExchangeRate mocks base method.
-func (m *MockStore) UpdateExchangeRate(ctx context.Context, arg db.UpdateExchangeRateParams) (db.UpdateExchangeRateRow, error) {
+func (m *MockStore) UpdateExchangeRate(ctx context.Context, arg db.UpdateExchangeRateParams) (db.ExchangeRate, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "UpdateExchangeRate", ctx, arg)
-	ret0, _ := ret[0].(db.UpdateExchangeRateRow)
+	ret0, _ := ret[0].(db.ExchangeRate)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

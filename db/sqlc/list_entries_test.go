@@ -5,15 +5,18 @@ import (
 	"lemfi/simplebank/util"
 	"testing"
 
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
 
 func TestListEntries(t *testing.T) {
 	account := createRandomAccount(t)
 	for i := 0; i < 10; i++ {
+		amount := decimal.NewFromFloat(util.RandomFloat(10.0, 1000.0)).Round(2)
+
 		arg := CreateEntryParams{
 			AccountID: account.ID,
-			Amount:    util.RandomMoney(),
+			Amount:    amount,
 		}
 		_, err := testQueries.CreateEntry(context.Background(), arg)
 		require.NoError(t, err)

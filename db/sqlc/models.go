@@ -8,29 +8,31 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 type Account struct {
-	ID        int64     `json:"id"`
-	Owner     string    `json:"owner"`
-	Balance   int64     `json:"balance"`
-	Currency  string    `json:"currency"`
-	CreatedAt time.Time `json:"created_at"`
+	ID    int64  `json:"id"`
+	Owner string `json:"owner"`
+	// Account balance in account currency
+	Balance   decimal.Decimal `json:"balance"`
+	Currency  string          `json:"currency"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 type Entry struct {
 	ID        int64 `json:"id"`
 	AccountID int64 `json:"account_id"`
-	// can be negative or positive
-	Amount    int64     `json:"amount"`
-	CreatedAt time.Time `json:"created_at"`
+	// Entry amount (positive for credits, negative for debits)
+	Amount    decimal.Decimal `json:"amount"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 type ExchangeRate struct {
 	ID           int64              `json:"id"`
 	FromCurrency string             `json:"from_currency"`
 	ToCurrency   string             `json:"to_currency"`
-	Rate         pgtype.Numeric     `json:"rate"`
+	Rate         decimal.Decimal    `json:"rate"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
@@ -38,10 +40,12 @@ type Transfer struct {
 	ID            int64 `json:"id"`
 	FromAccountID int64 `json:"from_account_id"`
 	ToAccountID   int64 `json:"to_account_id"`
-	// must be positive
-	Amount       int64          `json:"amount"`
-	CreatedAt    time.Time      `json:"created_at"`
-	ExchangeRate pgtype.Numeric `json:"exchange_rate"`
-	FromCurrency pgtype.Text    `json:"from_currency"`
-	ToCurrency   pgtype.Text    `json:"to_currency"`
+	// Original transfer amount in source currency
+	Amount decimal.Decimal `json:"amount"`
+	// Amount after currency conversion in target currency
+	ConvertedAmount decimal.Decimal `json:"converted_amount"`
+	ExchangeRate    decimal.Decimal `json:"exchange_rate"`
+	FromCurrency    pgtype.Text     `json:"from_currency"`
+	ToCurrency      pgtype.Text     `json:"to_currency"`
+	CreatedAt       time.Time       `json:"created_at"`
 }

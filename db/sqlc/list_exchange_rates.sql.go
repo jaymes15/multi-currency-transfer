@@ -7,32 +7,22 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const listExchangeRates = `-- name: ListExchangeRates :many
-SELECT id, from_currency, to_currency, rate::float8, created_at FROM exchange_rates
+SELECT id, from_currency, to_currency, rate, created_at FROM exchange_rates
 ORDER BY from_currency, to_currency
 `
 
-type ListExchangeRatesRow struct {
-	ID           int64              `json:"id"`
-	FromCurrency string             `json:"from_currency"`
-	ToCurrency   string             `json:"to_currency"`
-	Rate         float64            `json:"rate"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) ListExchangeRates(ctx context.Context) ([]ListExchangeRatesRow, error) {
+func (q *Queries) ListExchangeRates(ctx context.Context) ([]ExchangeRate, error) {
 	rows, err := q.db.Query(ctx, listExchangeRates)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	items := []ListExchangeRatesRow{}
+	items := []ExchangeRate{}
 	for rows.Next() {
-		var i ListExchangeRatesRow
+		var i ExchangeRate
 		if err := rows.Scan(
 			&i.ID,
 			&i.FromCurrency,

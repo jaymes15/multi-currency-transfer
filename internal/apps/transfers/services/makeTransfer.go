@@ -6,6 +6,8 @@ import (
 	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
 	requests "lemfi/simplebank/internal/apps/transfers/requests"
 	responses "lemfi/simplebank/internal/apps/transfers/responses"
+
+	"github.com/shopspring/decimal"
 )
 
 func (transferService *TransferService) MakeTransfer(payload requests.MakeTransferRequest) (responses.MakeTransferResponse, error) {
@@ -29,7 +31,7 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 	}
 
 	// Business validation: Amount must be positive
-	if payload.Amount <= 0 {
+	if payload.Amount.LessThanOrEqual(decimal.Zero) {
 		config.Logger.Error("Invalid transfer amount", "amount", payload.Amount)
 		return responses.MakeTransferResponse{}, transferErrors.ErrInvalidAmount
 	}

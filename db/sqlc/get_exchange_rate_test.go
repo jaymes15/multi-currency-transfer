@@ -19,5 +19,5 @@ func TestGetExchangeRate(t *testing.T) {
 	require.Equal(t, exchangeRate1.ID, exchangeRate2.ID)
 	require.Equal(t, exchangeRate1.FromCurrency, exchangeRate2.FromCurrency)
 	require.Equal(t, exchangeRate1.ToCurrency, exchangeRate2.ToCurrency)
-	require.InDelta(t, exchangeRate1.Rate, exchangeRate2.Rate, 0.000001)
+	require.Equal(t, exchangeRate1.Rate, exchangeRate2.Rate)
 }

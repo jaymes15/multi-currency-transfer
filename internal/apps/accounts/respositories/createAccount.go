@@ -4,6 +4,8 @@ import (
 	"lemfi/simplebank/config"
 	db "lemfi/simplebank/db/sqlc"
 	requests "lemfi/simplebank/internal/apps/accounts/requests"
+
+	"github.com/shopspring/decimal"
 )
 
 func (accountRespository *AccountRespository) CreateAccount(payload requests.CreateAccountRequest) (db.Account, error) {
@@ -11,7 +13,7 @@ func (accountRespository *AccountRespository) CreateAccount(payload requests.Cre
 
 	account, err := accountRespository.queries.CreateAccount(accountRespository.context, db.CreateAccountParams{
 		Owner:    payload.Owner,
-		Balance:  0,
+		Balance:  decimal.Zero,
 		Currency: payload.Currency,
 	})
 

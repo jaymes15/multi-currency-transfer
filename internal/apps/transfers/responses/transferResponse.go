@@ -4,6 +4,8 @@ import (
 	"time"
 
 	db "lemfi/simplebank/db/sqlc"
+
+	"github.com/shopspring/decimal"
 )
 
 type MakeTransferResponse struct {
@@ -16,40 +18,43 @@ type MakeTransferResponse struct {
 }
 
 type TransferDetail struct {
-	ID            int64     `json:"id"`
-	FromAccountID int64     `json:"from_account_id"`
-	ToAccountID   int64     `json:"to_account_id"`
-	Amount        int64     `json:"amount"`
-	FromCurrency  string    `json:"from_currency,omitempty"`
-	ToCurrency    string    `json:"to_currency,omitempty"`
-	ExchangeRate  float64   `json:"exchange_rate,omitempty"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID              int64           `json:"id"`
+	FromAccountID   int64           `json:"from_account_id"`
+	ToAccountID     int64           `json:"to_account_id"`
+	Amount          decimal.Decimal `json:"amount"`
+	ConvertedAmount decimal.Decimal `json:"converted_amount,omitempty"`
+	FromCurrency    string          `json:"from_currency,omitempty"`
+	ToCurrency      string          `json:"to_currency,omitempty"`
+	ExchangeRate    decimal.Decimal `json:"exchange_rate,omitempty"`
+	CreatedAt       time.Time       `json:"created_at"`
 }
 
 type AccountDetail struct {
-	ID        int64     `json:"id"`
-	Owner     string    `json:"owner"`
-	Balance   int64     `json:"balance"`
-	Currency  string    `json:"currency"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        int64           `json:"id"`
+	Owner     string          `json:"owner"`
+	Balance   decimal.Decimal `json:"balance"`
+	Currency  string          `json:"currency"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 type EntryDetail struct {
-	ID        int64     `json:"id"`
-	AccountID int64     `json:"account_id"`
-	Amount    int64     `json:"amount"`
-	CreatedAt time.Time `json:"created_at"`
+	ID        int64           `json:"id"`
+	AccountID int64           `json:"account_id"`
+	Amount    decimal.Decimal `json:"amount"`
+	CreatedAt time.Time       `json:"created_at"`
 }
 
 // NewMakeTransferResponse converts database result to API response
 func NewMakeTransferResponse(result db.TransferTxResult) MakeTransferResponse {
 	response := MakeTransferResponse{
 		Transfer: TransferDetail{
-			ID:            result.Transfer.ID,
-			FromAccountID: result.Transfer.FromAccountID,
-			ToAccountID:   result.Transfer.ToAccountID,
-			Amount:        result.Transfer.Amount,
-			CreatedAt:     result.Transfer.CreatedAt,
+			ID:              result.Transfer.ID,
+			FromAccountID:   result.Transfer.FromAccountID,
+			ToAccountID:     result.Transfer.ToAccountID,
+			Amount:          result.Transfer.Amount,
+			ConvertedAmount: result.Transfer.ConvertedAmount,
+			ExchangeRate:    result.Transfer.ExchangeRate,
+			CreatedAt:       result.Transfer.CreatedAt,
 		},
 		FromAccount: AccountDetail{
 			ID:        result.FromAccount.ID,
@@ -87,7 +92,6 @@ func NewMakeTransferResponse(result db.TransferTxResult) MakeTransferResponse {
 	if result.Transfer.ToCurrency.Valid {
 		response.Transfer.ToCurrency = result.Transfer.ToCurrency.String
 	}
-	// TODO: Handle ExchangeRate conversion from pgtype.Numeric to float64
 
 	return response
 }

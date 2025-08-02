@@ -7,12 +7,10 @@ package db
 
 import (
 	"context"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const getExchangeRate = `-- name: GetExchangeRate :one
-SELECT id, from_currency, to_currency, rate::float8, created_at FROM exchange_rates
+SELECT id, from_currency, to_currency, rate, created_at FROM exchange_rates
 WHERE from_currency = $1 AND to_currency = $2
 LIMIT 1
 `
@@ -22,17 +20,9 @@ type GetExchangeRateParams struct {
 	ToCurrency   string `json:"to_currency"`
 }
 
-type GetExchangeRateRow struct {
-	ID           int64              `json:"id"`
-	FromCurrency string             `json:"from_currency"`
-	ToCurrency   string             `json:"to_currency"`
-	Rate         float64            `json:"rate"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-}
-
-func (q *Queries) GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (GetExchangeRateRow, error) {
+func (q *Queries) GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (ExchangeRate, error) {
 	row := q.db.QueryRow(ctx, getExchangeRate, arg.FromCurrency, arg.ToCurrency)
-	var i GetExchangeRateRow
+	var i ExchangeRate
 	err := row.Scan(
 		&i.ID,
 		&i.FromCurrency,

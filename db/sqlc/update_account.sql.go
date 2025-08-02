@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/shopspring/decimal"
 )
 
 const updateAccount = `-- name: UpdateAccount :one
@@ -17,8 +19,8 @@ RETURNING id, owner, balance, currency, created_at
 `
 
 type UpdateAccountParams struct {
-	ID      int64 `json:"id"`
-	Balance int64 `json:"balance"`
+	ID      int64           `json:"id"`
+	Balance decimal.Decimal `json:"balance"`
 }
 
 func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {

@@ -6,27 +6,29 @@ package db
 
 import (
 	"context"
+
+	"github.com/shopspring/decimal"
 )
 
 type Querier interface {
-	AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (int64, error)
+	AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (decimal.Decimal, error)
 	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
 	CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
-	CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (CreateExchangeRateRow, error)
-	CreateTransfer(ctx context.Context, arg CreateTransferParams) (CreateTransferRow, error)
+	CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (ExchangeRate, error)
+	CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error)
 	DeleteAccount(ctx context.Context, id int64) error
 	GetAccount(ctx context.Context, id int64) (Account, error)
 	GetAccountForUpdate(ctx context.Context, id int64) (Account, error)
 	GetEntry(ctx context.Context, id int64) (Entry, error)
-	GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (GetExchangeRateRow, error)
+	GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (ExchangeRate, error)
 	GetTransfer(ctx context.Context, id int64) (GetTransferRow, error)
 	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
 	ListAllAccounts(ctx context.Context, arg ListAllAccountsParams) ([]Account, error)
 	ListEntries(ctx context.Context, arg ListEntriesParams) ([]Entry, error)
-	ListExchangeRates(ctx context.Context) ([]ListExchangeRatesRow, error)
+	ListExchangeRates(ctx context.Context) ([]ExchangeRate, error)
 	ListTransfers(ctx context.Context, arg ListTransfersParams) ([]ListTransfersRow, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
-	UpdateExchangeRate(ctx context.Context, arg UpdateExchangeRateParams) (UpdateExchangeRateRow, error)
+	UpdateExchangeRate(ctx context.Context, arg UpdateExchangeRateParams) (ExchangeRate, error)
 }
 
 var _ Querier = (*Queries)(nil)

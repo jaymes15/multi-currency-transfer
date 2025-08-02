@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/shopspring/decimal"
 )
 
 const addAccountBalance = `-- name: AddAccountBalance :one
@@ -17,13 +19,13 @@ RETURNING balance
 `
 
 type AddAccountBalanceParams struct {
-	Amount int64 `json:"amount"`
-	ID     int64 `json:"id"`
+	Amount decimal.Decimal `json:"amount"`
+	ID     int64           `json:"id"`
 }
 
-func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (int64, error) {
+func (q *Queries) AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (decimal.Decimal, error) {
 	row := q.db.QueryRow(ctx, addAccountBalance, arg.Amount, arg.ID)
-	var balance int64
+	var balance decimal.Decimal
 	err := row.Scan(&balance)
 	return balance, err
 }

@@ -8,6 +8,8 @@ package db
 import (
 	"context"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 const getTransfer = `-- name: GetTransfer :one
@@ -16,11 +18,11 @@ WHERE id = $1 LIMIT 1
 `
 
 type GetTransferRow struct {
-	ID            int64     `json:"id"`
-	FromAccountID int64     `json:"from_account_id"`
-	ToAccountID   int64     `json:"to_account_id"`
-	Amount        int64     `json:"amount"`
-	CreatedAt     time.Time `json:"created_at"`
+	ID            int64           `json:"id"`
+	FromAccountID int64           `json:"from_account_id"`
+	ToAccountID   int64           `json:"to_account_id"`
+	Amount        decimal.Decimal `json:"amount"`
+	CreatedAt     time.Time       `json:"created_at"`
 }
 
 func (q *Queries) GetTransfer(ctx context.Context, id int64) (GetTransferRow, error) {

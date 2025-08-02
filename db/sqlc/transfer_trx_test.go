@@ -5,11 +5,17 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 
 	"lemfi/simplebank/util"
 )
+
+// Utility functions for decimal.Decimal arithmetic
+func decimalToFloat64(d decimal.Decimal) float64 {
+	f, _ := d.Float64()
+	return f
+}
 
 func TestTransferTx(t *testing.T) {
 	store := NewStore(testDB)
@@ -19,11 +25,11 @@ func TestTransferTx(t *testing.T) {
 	account2 := createRandomAccount(t)
 
 	fmt.Printf(">>>>> start transfer from account %d to account %d\n", account1.ID, account2.ID)
-	fmt.Printf(">>>>> initial balance account1: %d, account2: %d\n", account1.Balance, account2.Balance)
+	fmt.Printf(">>>>> initial balance account1: %s, account2: %s\n", account1.Balance.String(), account2.Balance.String())
 
 	// run n concurrent transfer transactions
 	n := 5
-	amount := int64(10)
+	amount := decimal.NewFromInt(10).Round(2)
 
 	errs := make(chan error)
 	results := make(chan TransferTxResult)
@@ -32,9 +38,13 @@ func TestTransferTx(t *testing.T) {
 		go func(i int) {
 
 			result, err := store.TransferTx(context.Background(), TransferTxParams{
-				FromAccountID: account1.ID,
-				ToAccountID:   account2.ID,
-				Amount:        amount,
+				FromAccountID:   account1.ID,
+				ToAccountID:     account2.ID,
+				Amount:          amount,
+				ConvertedAmount: amount, // Same currency, so converted amount equals original amount
+				ExchangeRate:    decimal.NewFromInt(1).Round(8),
+				FromCurrency:    account1.Currency,
+				ToCurrency:      account2.Currency,
 			})
 
 			if err != nil {
@@ -73,7 +83,7 @@ func TestTransferTx(t *testing.T) {
 		fromEntry := result.FromEntry
 		require.NotEmpty(t, fromEntry)
 		require.Equal(t, account1.ID, fromEntry.AccountID)
-		require.Equal(t, -amount, fromEntry.Amount)
+		require.Equal(t, amount.Neg(), fromEntry.Amount)
 		require.NotZero(t, fromEntry.ID)
 
 		_, err = store.GetEntry(context.Background(), fromEntry.ID)
@@ -100,22 +110,22 @@ func TestTransferTx(t *testing.T) {
 		require.Equal(t, account2.ID, toAccount.ID)
 
 		// check from account balance
-		diff1 := account1.Balance - fromAccount.Balance
-		require.True(t, diff1 > 0)
-		require.True(t, diff1%amount == 0) // 1 * amount, 2 * amount, 3 * amount, ...
+		diff1 := account1.Balance.Sub(fromAccount.Balance)
+		require.True(t, diff1.GreaterThan(decimal.Zero))
+		require.True(t, diff1.Mod(amount).IsZero()) // 1 * amount, 2 * amount, 3 * amount, ...
 
 		// check to account balance
-		diff2 := toAccount.Balance - account2.Balance
-		require.True(t, diff2 > 0)
-		require.True(t, diff2%amount == 0)
+		diff2 := toAccount.Balance.Sub(account2.Balance)
+		require.True(t, diff2.GreaterThan(decimal.Zero))
+		require.True(t, diff2.Mod(amount).IsZero())
 
 		require.Equal(t, diff1, diff2)
 
-		k := int(diff1 / amount)
+		k := int(diff1.Div(amount).IntPart())
 		require.True(t, k >= 1 && k <= n)
 		require.NotContains(t, existed, k)
 		existed[k] = true
-		fmt.Printf(">>>>> transfer %d: k=%d, diff1=%d, diff2=%d\n", i+1, k, diff1, diff2)
+		fmt.Printf(">>>>> transfer %d: k=%d, diff1=%s, diff2=%s\n", i+1, k, diff1.String(), diff2.String())
 	}
 
 	// check the final balance
@@ -124,11 +134,14 @@ func TestTransferTx(t *testing.T) {
 	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
 	require.NoError(t, err)
 
-	fmt.Printf(">>>>> final balance account1: %d, account2: %d\n", updatedAccount1.Balance, updatedAccount2.Balance)
-	fmt.Printf(">>>>> expected balance account1: %d, account2: %d\n", account1.Balance-int64(n)*amount, account2.Balance+int64(n)*amount)
+	fmt.Printf(">>>>> final balance account1: %s, account2: %s\n", updatedAccount1.Balance.String(), updatedAccount2.Balance.String())
 
-	require.Equal(t, account1.Balance-int64(n)*amount, updatedAccount1.Balance)
-	require.Equal(t, account2.Balance+int64(n)*amount, updatedAccount2.Balance)
+	// Verify final balances
+	expectedBalance1 := account1.Balance.Sub(amount.Mul(decimal.NewFromInt(int64(n))))
+	expectedBalance2 := account2.Balance.Add(amount.Mul(decimal.NewFromInt(int64(n))))
+
+	require.Equal(t, expectedBalance1, updatedAccount1.Balance)
+	require.Equal(t, expectedBalance2, updatedAccount2.Balance)
 }
 
 func TestTransferTxDeadlock(t *testing.T) {
@@ -138,11 +151,11 @@ func TestTransferTxDeadlock(t *testing.T) {
 	account2 := createRandomAccount(t)
 
 	fmt.Printf(">>>>> start transfer from account %d to account %d\n", account1.ID, account2.ID)
-	fmt.Printf(">>>>> initial balance account1: %d, account2: %d\n", account1.Balance, account2.Balance)
+	fmt.Printf(">>>>> initial balance account1: %s, account2: %s\n", account1.Balance.String(), account2.Balance.String())
 
 	// run n concurrent transfer transactions
 	n := 10
-	amount := int64(10)
+	amount := decimal.NewFromInt(10).Round(2)
 
 	errs := make(chan error)
 
@@ -155,11 +168,26 @@ func TestTransferTxDeadlock(t *testing.T) {
 			toAccountID = account1.ID
 		}
 		go func(i int) {
+			// Get the actual currencies for the accounts being used
+			fromAccount, err := testQueries.GetAccount(context.Background(), fromAccountID)
+			if err != nil {
+				errs <- err
+				return
+			}
+			toAccount, err := testQueries.GetAccount(context.Background(), toAccountID)
+			if err != nil {
+				errs <- err
+				return
+			}
 
-			_, err := store.TransferTx(context.Background(), TransferTxParams{
-				FromAccountID: fromAccountID,
-				ToAccountID:   toAccountID,
-				Amount:        amount,
+			_, err = store.TransferTx(context.Background(), TransferTxParams{
+				FromAccountID:   fromAccountID,
+				ToAccountID:     toAccountID,
+				Amount:          amount,
+				ConvertedAmount: amount, // Same currency, so converted amount equals original amount
+				ExchangeRate:    decimal.NewFromInt(1).Round(8),
+				FromCurrency:    fromAccount.Currency,
+				ToCurrency:      toAccount.Currency,
 			})
 
 			if err != nil {
@@ -187,9 +215,9 @@ func TestTransferTxDeadlock(t *testing.T) {
 	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
 	require.NoError(t, err)
 
-	fmt.Printf(">>>>> final balance account1: %d, account2: %d\n", updatedAccount1.Balance, updatedAccount2.Balance)
-	fmt.Printf(">>>>> expected balance account1: %d, account2: %d\n", account1.Balance-int64(n)*amount, account2.Balance+int64(n)*amount)
+	fmt.Printf(">>>>> final balance account1: %s, account2: %s\n", updatedAccount1.Balance.String(), updatedAccount2.Balance.String())
 
+	// Verify final balances (should be the same since transfers are bidirectional)
 	require.Equal(t, account1.Balance, updatedAccount1.Balance)
 	require.Equal(t, account2.Balance, updatedAccount2.Balance)
 }
@@ -207,7 +235,7 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	}
 
 	// Try to get existing exchange rate, or create a new one
-	var exchangeRate GetExchangeRateRow
+	var exchangeRate ExchangeRate
 	existingRate, err := testQueries.GetExchangeRate(context.Background(), GetExchangeRateParams{
 		FromCurrency: account1.Currency,
 		ToCurrency:   account2.Currency,
@@ -215,28 +243,16 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 
 	if err != nil {
 		// Exchange rate doesn't exist, create a new one
-		rate := util.RandomFloat(0.1, 5000.0)
-
-		var numericRate pgtype.Numeric
-		numericRate.Scan(fmt.Sprintf("%.8f", rate))
+		rate := decimal.NewFromFloat(util.RandomFloat(0.1, 10.0))
 
 		exchangeRateArg := CreateExchangeRateParams{
 			FromCurrency: account1.Currency,
 			ToCurrency:   account2.Currency,
-			Rate:         numericRate,
+			Rate:         rate,
 		}
 
-		createdRate, err := testQueries.CreateExchangeRate(context.Background(), exchangeRateArg)
+		exchangeRate, err = testQueries.CreateExchangeRate(context.Background(), exchangeRateArg)
 		require.NoError(t, err)
-
-		// Convert CreateExchangeRateRow to GetExchangeRateRow
-		exchangeRate = GetExchangeRateRow{
-			ID:           createdRate.ID,
-			FromCurrency: createdRate.FromCurrency,
-			ToCurrency:   createdRate.ToCurrency,
-			Rate:         createdRate.Rate,
-			CreatedAt:    createdRate.CreatedAt,
-		}
 	} else {
 		exchangeRate = existingRate
 	}
@@ -245,18 +261,26 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 
 	fmt.Printf(">>>>> start multi-currency transfer from account %d (%s) to account %d (%s)\n",
 		account1.ID, account1.Currency, account2.ID, account2.Currency)
-	fmt.Printf(">>>>> initial balance account1: %d %s, account2: %d %s\n",
-		account1.Balance, account1.Currency, account2.Balance, account2.Currency)
-	fmt.Printf(">>>>> exchange rate: 1 %s = %.8f %s\n",
-		account1.Currency, exchangeRate.Rate, account2.Currency)
+	fmt.Printf(">>>>> initial balance account1: %s %s, account2: %s %s\n",
+		account1.Balance.String(), account1.Currency, account2.Balance.String(), account2.Currency)
+	fmt.Printf(">>>>> exchange rate: 1 %s = %s %s\n",
+		account1.Currency, exchangeRate.Rate.String(), account2.Currency)
 
-	amount := int64(100)
+	// Use a smaller amount to ensure it's less than the account balance
+	amount := decimal.NewFromInt(10).Round(2)
+
+	// Calculate converted amount and round to 2 decimal places
+	convertedAmount := amount.Mul(exchangeRate.Rate).Round(2)
 
 	// Perform the multi-currency transfer
 	result, err := store.TransferTx(context.Background(), TransferTxParams{
-		FromAccountID: account1.ID,
-		ToAccountID:   account2.ID,
-		Amount:        amount,
+		FromAccountID:   account1.ID,
+		ToAccountID:     account2.ID,
+		Amount:          amount,
+		ConvertedAmount: convertedAmount,
+		ExchangeRate:    exchangeRate.Rate,
+		FromCurrency:    account1.Currency,
+		ToCurrency:      account2.Currency,
 	})
 
 	require.NoError(t, err)
@@ -281,7 +305,7 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	fromEntry := result.FromEntry
 	require.NotEmpty(t, fromEntry)
 	require.Equal(t, account1.ID, fromEntry.AccountID)
-	require.Equal(t, -amount, fromEntry.Amount)
+	require.Equal(t, amount.Neg(), fromEntry.Amount)
 	require.NotZero(t, fromEntry.ID)
 
 	// Verify the from entry was created in the database
@@ -293,7 +317,7 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	toEntry := result.ToEntry
 	require.NotEmpty(t, toEntry)
 	require.Equal(t, account2.ID, toEntry.AccountID)
-	require.Equal(t, amount, toEntry.Amount)
+	require.Equal(t, convertedAmount, toEntry.Amount) // Should be converted amount
 	require.NotZero(t, toEntry.ID)
 
 	// Verify the to entry was created in the database
@@ -312,15 +336,15 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	require.Equal(t, account2.ID, toAccount.ID)
 
 	// Check from account balance (should be reduced by the original amount)
-	diff1 := account1.Balance - fromAccount.Balance
+	diff1 := account1.Balance.Sub(fromAccount.Balance)
 	require.Equal(t, amount, diff1)
 
-	// Check to account balance (should be increased by the original amount)
-	diff2 := toAccount.Balance - account2.Balance
-	require.Equal(t, amount, diff2)
+	// Check to account balance (should be increased by the converted amount)
+	diff2 := toAccount.Balance.Sub(account2.Balance)
+	require.Equal(t, convertedAmount, diff2)
 
-	fmt.Printf(">>>>> balance change account1: -%d %s, account2: +%d %s\n",
-		diff1, account1.Currency, diff2, account2.Currency)
+	fmt.Printf(">>>>> balance change account1: -%s %s, account2: +%s %s\n",
+		diff1.String(), account1.Currency, diff2.String(), account2.Currency)
 
 	// Verify final balances
 	updatedAccount1, err := testQueries.GetAccount(context.Background(), account1.ID)
@@ -328,11 +352,15 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	updatedAccount2, err := testQueries.GetAccount(context.Background(), account2.ID)
 	require.NoError(t, err)
 
-	fmt.Printf(">>>>> final balance account1: %d %s, account2: %d %s\n",
-		updatedAccount1.Balance, updatedAccount1.Currency, updatedAccount2.Balance, updatedAccount2.Currency)
+	fmt.Printf(">>>>> final balance account1: %s %s, account2: %s %s\n",
+		updatedAccount1.Balance.String(), updatedAccount1.Currency, updatedAccount2.Balance.String(), updatedAccount2.Currency)
 
-	require.Equal(t, account1.Balance-amount, updatedAccount1.Balance)
-	require.Equal(t, account2.Balance+amount, updatedAccount2.Balance)
+	// Check final balances with proper arithmetic
+	expectedBalance1 := account1.Balance.Sub(amount)
+	expectedBalance2 := account2.Balance.Add(convertedAmount)
+
+	require.Equal(t, expectedBalance1, updatedAccount1.Balance)
+	require.Equal(t, expectedBalance2, updatedAccount2.Balance)
 
 	// Verify currencies haven't changed
 	require.Equal(t, account1.Currency, updatedAccount1.Currency)

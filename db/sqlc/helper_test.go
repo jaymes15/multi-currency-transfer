@@ -2,19 +2,23 @@ package db
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 
 	"lemfi/simplebank/util"
 )
 
 func createRandomAccount(t *testing.T) Account {
+	// Create balance with 2 decimal places to match database precision
+	balanceFloat := util.RandomFloat(10.0, 1000.0)
+	balance := decimal.NewFromFloat(balanceFloat).Round(2)
+
 	arg := CreateAccountParams{
 		Owner:    util.RandomOwner(),
-		Balance:  util.RandomMoney(),
+		Balance:  balance,
 		Currency: util.RandomCurrency(),
 	}
 
@@ -35,9 +39,13 @@ func createRandomAccount(t *testing.T) Account {
 func createRandomEntry(t *testing.T) Entry {
 	account := createRandomAccount(t)
 
+	// Create amount with 2 decimal places to match database precision
+	amountFloat := util.RandomFloat(10.0, 1000.0)
+	amount := decimal.NewFromFloat(amountFloat).Round(2)
+
 	arg := CreateEntryParams{
 		AccountID: account.ID,
-		Amount:    util.RandomMoney(),
+		Amount:    amount,
 	}
 
 	entry, err := testQueries.CreateEntry(context.Background(), arg)
@@ -52,17 +60,22 @@ func createRandomEntry(t *testing.T) Entry {
 	return entry
 }
 
-func createRandomTransfer(t *testing.T) CreateTransferRow {
+func createRandomTransfer(t *testing.T) Transfer {
 	fromAccount := createRandomAccount(t)
 	toAccount := createRandomAccount(t)
 
+	// Create amount with 2 decimal places to match database precision
+	amountFloat := util.RandomFloat(10.0, 1000.0)
+	amount := decimal.NewFromFloat(amountFloat).Round(2)
+
 	arg := CreateTransferParams{
-		FromAccountID: fromAccount.ID,
-		ToAccountID:   toAccount.ID,
-		Amount:        util.RandomMoney(),
-		ExchangeRate:  pgtype.Numeric{},
-		FromCurrency:  pgtype.Text{},
-		ToCurrency:    pgtype.Text{},
+		FromAccountID:   fromAccount.ID,
+		ToAccountID:     toAccount.ID,
+		Amount:          amount,
+		ConvertedAmount: amount,                             // For simple transfers, use same amount
+		ExchangeRate:    decimal.NewFromFloat(1.0).Round(8), // 8 decimal places for exchange rates
+		FromCurrency:    pgtype.Text{},
+		ToCurrency:      pgtype.Text{},
 	}
 
 	transfer, err := testQueries.CreateTransfer(context.Background(), arg)
@@ -78,7 +91,7 @@ func createRandomTransfer(t *testing.T) CreateTransferRow {
 	return transfer
 }
 
-func createRandomExchangeRate(t *testing.T) CreateExchangeRateRow {
+func createRandomExchangeRate(t *testing.T) ExchangeRate {
 	currencies := []string{"GBP", "NGN", "USD", "EUR"}
 	fromCurrency := currencies[util.RandomInt(0, int64(len(currencies)-1))]
 	toCurrency := currencies[util.RandomInt(0, int64(len(currencies)-1))]
@@ -96,25 +109,17 @@ func createRandomExchangeRate(t *testing.T) CreateExchangeRateRow {
 
 	if err == nil {
 		// Exchange rate already exists, return it
-		return CreateExchangeRateRow{
-			ID:           existingRate.ID,
-			FromCurrency: existingRate.FromCurrency,
-			ToCurrency:   existingRate.ToCurrency,
-			Rate:         existingRate.Rate,
-			CreatedAt:    existingRate.CreatedAt,
-		}
+		return existingRate
 	}
 
-	// Create new exchange rate
-	rate := util.RandomFloat(0.1, 5000.0)
-
-	var numericRate pgtype.Numeric
-	numericRate.Scan(fmt.Sprintf("%.8f", rate))
+	// Create new exchange rate with 8 decimal places to match database precision
+	rateFloat := util.RandomFloat(0.1, 10.0)
+	rate := decimal.NewFromFloat(rateFloat).Round(8)
 
 	arg := CreateExchangeRateParams{
 		FromCurrency: fromCurrency,
 		ToCurrency:   toCurrency,
-		Rate:         numericRate,
+		Rate:         rate,
 	}
 
 	exchangeRate, err := testQueries.CreateExchangeRate(context.Background(), arg)
@@ -123,7 +128,7 @@ func createRandomExchangeRate(t *testing.T) CreateExchangeRateRow {
 
 	require.Equal(t, arg.FromCurrency, exchangeRate.FromCurrency)
 	require.Equal(t, arg.ToCurrency, exchangeRate.ToCurrency)
-	require.InDelta(t, rate, exchangeRate.Rate, 0.000001) // Use InDelta for float comparison
+	require.Equal(t, arg.Rate, exchangeRate.Rate)
 	require.NotZero(t, exchangeRate.ID)
 	require.NotZero(t, exchangeRate.CreatedAt)
 

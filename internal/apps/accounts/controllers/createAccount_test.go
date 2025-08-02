@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -32,7 +33,7 @@ func TestCreateAccountHTTP_Success(t *testing.T) {
 	expectedAccount := db.Account{
 		ID:       1,
 		Owner:    "test_owner",
-		Balance:  0,
+		Balance:  decimal.Zero,
 		Currency: "USD",
 	}
 

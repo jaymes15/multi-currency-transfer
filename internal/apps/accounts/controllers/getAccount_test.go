@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
@@ -26,13 +27,13 @@ func TestGetAccountHTTP(t *testing.T) {
 		{
 			ID:       1,
 			Owner:    "test_owner_1",
-			Balance:  1000,
+			Balance:  decimal.NewFromInt(1000),
 			Currency: "USD",
 		},
 		{
 			ID:       2,
 			Owner:    "test_owner_2",
-			Balance:  2000,
+			Balance:  decimal.NewFromInt(2000),
 			Currency: "EUR",
 		},
 	}
@@ -147,13 +148,13 @@ func TestGetAccountHTTP_ResponseBody(t *testing.T) {
 		{
 			ID:       1,
 			Owner:    "test_owner_1",
-			Balance:  1000,
+			Balance:  decimal.NewFromInt(1000),
 			Currency: "USD",
 		},
 		{
 			ID:       2,
 			Owner:    "test_owner_2",
-			Balance:  2000,
+			Balance:  decimal.NewFromInt(2000),
 			Currency: "EUR",
 		},
 	}

@@ -2,24 +2,30 @@ package db
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/shopspring/decimal"
 )
 
 // TransferTxParams contains the input parameters of the transfer transaction
 type TransferTxParams struct {
-	FromAccountID int64 `json:"from_account_id"`
-	ToAccountID   int64 `json:"to_account_id"`
-	Amount        int64 `json:"amount"`
+	FromAccountID   int64           `json:"from_account_id"`
+	ToAccountID     int64           `json:"to_account_id"`
+	Amount          decimal.Decimal `json:"amount"`
+	ConvertedAmount decimal.Decimal `json:"converted_amount"`
+	ExchangeRate    decimal.Decimal `json:"exchange_rate,omitempty"`
+	FromCurrency    string          `json:"from_currency,omitempty"`
+	ToCurrency      string          `json:"to_currency,omitempty"`
 }
 
 // TransferTxResult is the result of the transfer transaction
 type TransferTxResult struct {
-	Transfer    CreateTransferRow `json:"transfer"`
-	FromAccount Account           `json:"from_account"`
-	ToAccount   Account           `json:"to_account"`
-	FromEntry   Entry             `json:"from_entry"`
-	ToEntry     Entry             `json:"to_entry"`
+	Transfer    Transfer `json:"transfer"`
+	FromAccount Account  `json:"from_account"`
+	ToAccount   Account  `json:"to_account"`
+	FromEntry   Entry    `json:"from_entry"`
+	ToEntry     Entry    `json:"to_entry"`
 }
 
 // TransferTx performs a money transfer from one account to the other.
@@ -30,21 +36,62 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
 
+		// Validate that accounts exist
+		fromAccount, err := q.GetAccount(ctx, arg.FromAccountID)
+		if err != nil {
+			return fmt.Errorf("from account not found: %w", err)
+		}
+
+		toAccount, err := q.GetAccount(ctx, arg.ToAccountID)
+		if err != nil {
+			return fmt.Errorf("to account not found: %w", err)
+		}
+
+		// Validate currencies match if provided
+		if arg.FromCurrency != "" && fromAccount.Currency != arg.FromCurrency {
+			return fmt.Errorf("from account currency mismatch: expected %s, got %s", fromAccount.Currency, arg.FromCurrency)
+		}
+
+		if arg.ToCurrency != "" && toAccount.Currency != arg.ToCurrency {
+			return fmt.Errorf("to account currency mismatch: expected %s, got %s", toAccount.Currency, arg.ToCurrency)
+		}
+
+		// Validate sufficient balance
+		if fromAccount.Balance.LessThan(arg.Amount) {
+			return fmt.Errorf("insufficient balance: account has %s, transfer requires %s", fromAccount.Balance.String(), arg.Amount.String())
+		}
+
+		// Prepare currency data
+		var fromCurrency pgtype.Text
+		var toCurrency pgtype.Text
+
+		if arg.FromCurrency != "" {
+			fromCurrency.Scan(arg.FromCurrency)
+		}
+		if arg.ToCurrency != "" {
+			toCurrency.Scan(arg.ToCurrency)
+		}
+
 		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
-			FromAccountID: arg.FromAccountID,
-			ToAccountID:   arg.ToAccountID,
-			Amount:        arg.Amount,
-			ExchangeRate:  pgtype.Numeric{},
-			FromCurrency:  pgtype.Text{},
-			ToCurrency:    pgtype.Text{},
+			FromAccountID:   arg.FromAccountID,
+			ToAccountID:     arg.ToAccountID,
+			Amount:          arg.Amount,
+			ConvertedAmount: arg.ConvertedAmount,
+			ExchangeRate:    arg.ExchangeRate,
+			FromCurrency:    fromCurrency,
+			ToCurrency:      toCurrency,
 		})
 		if err != nil {
 			return err
 		}
 
+		// Create entries with original amount (from account) and converted amount (to account)
+		fromEntryAmount := arg.Amount.Neg()  // Debit original amount (negative)
+		toEntryAmount := arg.ConvertedAmount // Credit converted amount
+
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,
-			Amount:    -arg.Amount,
+			Amount:    fromEntryAmount,
 		})
 		if err != nil {
 			return err
@@ -52,16 +99,17 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 
 		result.ToEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.ToAccountID,
-			Amount:    arg.Amount,
+			Amount:    toEntryAmount,
 		})
 		if err != nil {
 			return err
 		}
 
+		// Update account balances with appropriate amounts
 		if arg.FromAccountID < arg.ToAccountID {
-			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, -arg.Amount, arg.ToAccountID, arg.Amount)
+			result.FromAccount, result.ToAccount, err = addMoney(ctx, q, arg.FromAccountID, fromEntryAmount, arg.ToAccountID, toEntryAmount)
 		} else {
-			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, arg.Amount, arg.FromAccountID, -arg.Amount)
+			result.ToAccount, result.FromAccount, err = addMoney(ctx, q, arg.ToAccountID, toEntryAmount, arg.FromAccountID, fromEntryAmount)
 		}
 
 		return err
@@ -74,9 +122,9 @@ func addMoney(
 	ctx context.Context,
 	q *Queries,
 	accountID1 int64,
-	amount1 int64,
+	amount1 decimal.Decimal,
 	accountID2 int64,
-	amount2 int64,
+	amount2 decimal.Decimal,
 ) (account1 Account, account2 Account, err error) {
 	_, err = q.AddAccountBalance(ctx, AddAccountBalanceParams{
 		ID:     accountID1,
