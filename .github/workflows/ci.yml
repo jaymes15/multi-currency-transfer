@@ -20,8 +20,16 @@ jobs:
 
     - name: Install Docker Compose
       run: |
+        # Install Docker Compose v2 (which provides 'docker compose' command)
+        sudo apt-get update
+        sudo apt-get install -y docker-compose-plugin
+        
+        # Also install the standalone version for compatibility
         sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
         sudo chmod +x /usr/local/bin/docker-compose
+        
+        # Verify both versions work
+        docker compose version
         docker-compose --version
 
     - name: Run tests
