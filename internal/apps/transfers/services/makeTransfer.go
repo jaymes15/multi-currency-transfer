@@ -3,6 +3,7 @@ package transfers
 import (
 	"context"
 	"lemfi/simplebank/config"
+	"lemfi/simplebank/internal/apps/core"
 	"lemfi/simplebank/internal/apps/currencies"
 	exchangeRateRequests "lemfi/simplebank/internal/apps/exchangeRates/requests"
 	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
@@ -67,7 +68,12 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 				"to_currency", payload.ToCurrency,
 				"error", err.Error(),
 			)
-			return responses.MakeTransferResponse{}, err
+			// Check if it's a client error from exchange rate service
+			if _, isClient := core.IsClientError(err); isClient {
+				return responses.MakeTransferResponse{}, err
+			}
+			// If it's not a client error, return a generic server error
+			return responses.MakeTransferResponse{}, transferErrors.ErrExchangeRateNotFound
 		}
 
 		exchangeRate = exchangeRateResponse.ExchangeRate.Rate

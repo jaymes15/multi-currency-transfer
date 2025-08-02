@@ -12,7 +12,6 @@ func (accountService *AccountService) CreateAccount(payload requests.CreateAccou
 
 	if !currencies.IsSupportedCurrency(currencies.Currency(payload.Currency)) {
 		config.Logger.Error("Currency is not supported", "currency", payload.Currency)
-
 		return responses.CreateAccountResponse{}, currencies.ErrCurrencyNotSupported
 	}
 

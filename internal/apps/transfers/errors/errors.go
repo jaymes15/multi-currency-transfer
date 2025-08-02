@@ -32,4 +32,8 @@ var (
 		Message: "insufficient balance",
 		Status:  400,
 	}
+	ErrExchangeRateNotFound = core.ClientError{
+		Message: "exchange rate not found for currency pair",
+		Status:  400,
+	}
 )
