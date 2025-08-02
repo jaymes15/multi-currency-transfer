@@ -23,5 +23,8 @@ jobs:
       with:
         version: v2.23.3
 
+    - name: Make Env file
+      run: mv .sample.env .env
+
     - name: Run tests
       run: make test 
