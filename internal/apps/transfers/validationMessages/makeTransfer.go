@@ -8,7 +8,5 @@ var MakeTransferValidationMessages = map[string]string{
 	"Amount.required":        "amount is required",
 	"Amount.min":             "amount must be greater than 0",
 	"FromCurrency.required":  "from_currency is required",
-	"FromCurrency.oneof":     "from_currency must be one of: USD, EUR, GBP, NGN",
 	"ToCurrency.required":    "to_currency is required",
-	"ToCurrency.oneof":       "to_currency must be one of: USD, EUR, GBP, NGN",
 }

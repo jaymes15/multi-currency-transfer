@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"lemfi/simplebank/config"
+	"lemfi/simplebank/internal/apps/core"
 	"net/http"
 
 	errorResponse "lemfi/simplebank/pkg/errorResponse"
@@ -31,7 +32,11 @@ func (accountController *AccountController) CreateAccountController(c *gin.Conte
 	account, err := accountController.accountService.CreateAccount(req)
 	if err != nil {
 		config.Logger.Error("Failed to create account", "error", err.Error(), "owner", req.Owner)
-		errorResponse.ServerErrorResponse(c, err)
+		if clientErr, isClient := core.IsClientError(err); isClient {
+			errorResponse.BadRequestResponse(c, clientErr)
+		} else {
+			errorResponse.ServerErrorResponse(c, err)
+		}
 		return
 	}
 

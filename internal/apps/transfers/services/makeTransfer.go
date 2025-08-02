@@ -2,6 +2,7 @@ package transfers
 
 import (
 	"lemfi/simplebank/config"
+	"lemfi/simplebank/internal/apps/currencies"
 	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
 	requests "lemfi/simplebank/internal/apps/transfers/requests"
 	responses "lemfi/simplebank/internal/apps/transfers/responses"
@@ -15,6 +16,11 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 		"from_currency", payload.FromCurrency,
 		"to_currency", payload.ToCurrency,
 	)
+
+	if !currencies.IsSupportedCurrency(currencies.Currency(payload.FromCurrency)) {
+		config.Logger.Error("From currency is not supported", "currency", payload.FromCurrency)
+		return responses.MakeTransferResponse{}, currencies.ErrCurrencyNotSupported
+	}
 
 	// Business validation: Same account transfer prevention
 	if payload.FromAccountID == payload.ToAccountID {

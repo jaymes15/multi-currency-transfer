@@ -2,7 +2,7 @@ package transfers
 
 import (
 	"lemfi/simplebank/config"
-	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
+	"lemfi/simplebank/internal/apps/core"
 	requests "lemfi/simplebank/internal/apps/transfers/requests"
 	transferValidation "lemfi/simplebank/internal/apps/transfers/validationMessages"
 
@@ -33,7 +33,7 @@ func (transferController *TransferController) MakeTransferController(c *gin.Cont
 		config.Logger.Error("Failed to make transfer", "error", err.Error(), "fromAccountID", req.FromAccountID, "toAccountID", req.ToAccountID, "amount", req.Amount, "fromCurrency", req.FromCurrency, "toCurrency", req.ToCurrency)
 
 		// Check if it's a client error (400) or server error (500)
-		if clientErr, isClient := transferErrors.IsClientError(err); isClient {
+		if clientErr, isClient := core.IsClientError(err); isClient {
 			errorResponse.BadRequestResponse(c, clientErr)
 		} else {
 			errorResponse.ServerErrorResponse(c, err)
