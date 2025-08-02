@@ -25,9 +25,6 @@ test-verbose:
 	docker-compose run --rm api sh -c "go test -v -cover ./..."
 	make migratedown
 
-test-controllers:
-	@echo "🧪 Running controller tests only..."
-	docker-compose run --rm api sh -c "go test -cover ./internal/apps/accounts/controllers/"
 
 test-db:
 	@echo "🧪 Running database tests only..."

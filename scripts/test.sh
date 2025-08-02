@@ -66,4 +66,10 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+run_tests "./internal/apps/exchangeRates/controllers/" "Exchange Rates Controller"
+if [ $? -ne 0 ]; then
+    print_error "Exchange Rates Controller tests failed!"
+    exit 1
+fi
+
 print_success "All tests completed successfully!" 
