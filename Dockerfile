@@ -19,7 +19,6 @@ FROM alpine:3.19.1
 WORKDIR /app
 
 COPY --from=builder /app/app ./main
-# COPY .env .
 
 EXPOSE 4000
 
