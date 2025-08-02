@@ -14,6 +14,9 @@ migratedown:
 
 # Run tests with coverage
 test:
+	docker-compose up -d
+	sleep 3
+	make migratedown
 	make migrateup
 	@echo "🧪 Running all tests..."
 	docker-compose run --rm api sh -c "go test -cover ./..."
