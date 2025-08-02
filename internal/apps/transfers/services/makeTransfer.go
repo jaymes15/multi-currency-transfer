@@ -1,8 +1,10 @@
 package transfers
 
 import (
+	"context"
 	"lemfi/simplebank/config"
 	"lemfi/simplebank/internal/apps/currencies"
+	exchangeRateRequests "lemfi/simplebank/internal/apps/exchangeRates/requests"
 	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
 	requests "lemfi/simplebank/internal/apps/transfers/requests"
 	responses "lemfi/simplebank/internal/apps/transfers/responses"
@@ -46,8 +48,34 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 		)
 	}
 
+	// Calculate exchange rate and converted amount in service layer
+	convertedAmount := payload.Amount
+	exchangeRate := decimal.NewFromInt(1) // Default to 1:1 for same currency
+
+	if payload.FromCurrency != payload.ToCurrency {
+		// Use exchange rate service to get exchange rate
+		exchangeRateRequest := exchangeRateRequests.GetExchangeRateRequest{
+			FromCurrency: payload.FromCurrency,
+			ToCurrency:   payload.ToCurrency,
+			Amount:       payload.Amount,
+		}
+
+		exchangeRateResponse, err := transferService.exchangeRateService.GetExchangeRate(context.Background(), exchangeRateRequest)
+		if err != nil {
+			config.Logger.Error("Failed to get exchange rate",
+				"from_currency", payload.FromCurrency,
+				"to_currency", payload.ToCurrency,
+				"error", err.Error(),
+			)
+			return responses.MakeTransferResponse{}, err
+		}
+
+		exchangeRate = exchangeRateResponse.ExchangeRate.Rate
+		convertedAmount = exchangeRateResponse.AmountToReceive
+	}
+
 	// Execute transfer through repository (includes data validation: account existence, balance check, currency matching)
-	result, err := transferService.transferRespository.MakeTransfer(payload)
+	result, err := transferService.transferRespository.MakeTransfer(payload, convertedAmount, exchangeRate)
 	if err != nil {
 		config.Logger.Error("Transfer failed",
 			"error", err.Error(),
