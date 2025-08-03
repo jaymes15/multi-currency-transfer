@@ -57,11 +57,7 @@ func (exchangeRateController *ExchangeRateController) GetExchangeRateController(
 	)
 
 	response := responseHandler.Envelope{
-		"exchange_rate":     result.ExchangeRate,
-		"amount_to_send":    result.AmountToSend,
-		"amount_to_receive": result.AmountToReceive,
-		"can_transact":      result.CanTransact,
-		"message":           result.Message,
+		"exchange_rate": result,
 	}
 
 	err = responseHandler.WriteJSON(c.Writer, http.StatusOK, response, nil)

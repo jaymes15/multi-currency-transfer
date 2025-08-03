@@ -45,6 +45,10 @@ func (m *MockExchangeRateService) GetExchangeRate(ctx context.Context, payload r
 	amountToSend := payload.Amount
 	amountToReceive := payload.Amount.Mul(dbExchangeRate.Rate).Round(2)
 
+	// Calculate fee (using a default fee for testing)
+	fee := decimal.NewFromFloat(1.99) // Default fee for testing
+	totalAmount := amountToSend.Add(fee)
+
 	canTransact := false
 	message := "Exchange rate expired"
 
@@ -63,6 +67,8 @@ func (m *MockExchangeRateService) GetExchangeRate(ctx context.Context, payload r
 		ExchangeRate:    exchangeRate,
 		AmountToSend:    amountToSend,
 		AmountToReceive: amountToReceive,
+		Fee:             fee,
+		TotalAmount:     totalAmount,
 		CanTransact:     canTransact,
 		Message:         message,
 	}, nil
@@ -132,6 +138,8 @@ func TestGetExchangeRateService_Success(t *testing.T) {
 	require.Equal(t, decimal.NewFromFloat(0.85), result.ExchangeRate.Rate)
 	require.Equal(t, decimal.NewFromFloat(100.00), result.AmountToSend)
 	require.Equal(t, decimal.NewFromFloat(85.00).Round(2), result.AmountToReceive)
+	require.NotEqual(t, decimal.Zero, result.Fee)                             // Fee should be set
+	require.Equal(t, result.AmountToSend.Add(result.Fee), result.TotalAmount) // Total should be amount + fee
 	require.Equal(t, true, result.CanTransact)
 	require.Equal(t, "Exchange rate available for transaction", result.Message)
 }

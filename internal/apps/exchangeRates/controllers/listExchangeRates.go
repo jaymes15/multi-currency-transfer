@@ -29,8 +29,7 @@ func (exchangeRateController *ExchangeRateController) ListExchangeRatesControlle
 	config.Logger.Info("Exchange rates listed successfully", "total", result.Total)
 
 	response := responseHandler.Envelope{
-		"exchange_rates": result.ExchangeRates,
-		"total":          result.Total,
+		"exchange_rates": result,
 	}
 
 	err = responseHandler.WriteJSON(c.Writer, http.StatusOK, response, nil)

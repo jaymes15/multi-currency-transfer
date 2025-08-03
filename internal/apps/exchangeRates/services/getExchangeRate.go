@@ -47,6 +47,11 @@ func (exchangeRateService *ExchangeRateService) GetExchangeRate(ctx context.Cont
 	amountToSend := payload.Amount
 	amountToReceive := payload.Amount.Mul(dbExchangeRate.Rate).Round(2)
 
+	// Calculate fee based on configuration
+	cfg := config.Get()
+	fee := cfg.MultiCurrency.Fee
+	totalAmount := amountToSend.Add(fee)
+
 	canTransact := false
 	message := "Exchange rate expired"
 	if !exchangeRateService.IsExchangeRateExpired(dbExchangeRate) {
@@ -58,6 +63,8 @@ func (exchangeRateService *ExchangeRateService) GetExchangeRate(ctx context.Cont
 		ExchangeRate:    exchangeRate,
 		AmountToSend:    amountToSend,
 		AmountToReceive: amountToReceive,
+		Fee:             fee,
+		TotalAmount:     totalAmount,
 		CanTransact:     canTransact,
 		Message:         message,
 	}
@@ -66,6 +73,8 @@ func (exchangeRateService *ExchangeRateService) GetExchangeRate(ctx context.Cont
 		"rate", response.ExchangeRate.Rate,
 		"amount_to_send", amountToSend.String(),
 		"amount_to_receive", amountToReceive.String(),
+		"fee", fee.String(),
+		"total_amount", totalAmount.String(),
 	)
 
 	config.Logger.Info("Service: Successfully got exchange rate",

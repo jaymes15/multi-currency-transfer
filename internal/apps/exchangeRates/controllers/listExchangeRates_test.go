@@ -182,8 +182,10 @@ func TestListExchangeRatesHTTP_ResponseBody(t *testing.T) {
 
 	// Verify response structure
 	require.Contains(t, response, "exchange_rates")
-	require.Contains(t, response, "total")
-	rates := response["exchange_rates"].([]interface{})
+	exchangeRatesData := response["exchange_rates"].(map[string]interface{})
+	require.Contains(t, exchangeRatesData, "exchange_rates")
+	require.Contains(t, exchangeRatesData, "total")
+	rates := exchangeRatesData["exchange_rates"].([]interface{})
 	require.Len(t, rates, 2)
-	require.Equal(t, float64(2), response["total"])
+	require.Equal(t, float64(2), exchangeRatesData["total"])
 }

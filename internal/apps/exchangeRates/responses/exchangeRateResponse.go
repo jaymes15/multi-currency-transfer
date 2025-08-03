@@ -27,6 +27,8 @@ type GetExchangeRateResponse struct {
 	ExchangeRate    ExchangeRateResponse `json:"exchange_rate"`
 	AmountToSend    decimal.Decimal      `json:"amount_to_send"`
 	AmountToReceive decimal.Decimal      `json:"amount_to_receive"`
+	Fee             decimal.Decimal      `json:"fee"`
+	TotalAmount     decimal.Decimal      `json:"total_amount"` // amount_to_send + fee
 	CanTransact     bool                 `json:"can_transact"`
 	Message         string               `json:"message"`
 }

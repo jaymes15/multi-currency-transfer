@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/shopspring/decimal"
 )
 
 func Set() Config {
@@ -16,6 +18,16 @@ func Set() Config {
 		panic(err)
 	}
 
+	multiCurrencyFee, err := decimal.NewFromString(os.Getenv("MULTI_CURRENCY_FEE"))
+	if err != nil {
+		// Default to 1.99 if environment variable is not set or invalid
+		multiCurrencyFee = decimal.NewFromFloat(1.99)
+		Logger.Info("Using default multi-currency fee", "fee", multiCurrencyFee.String())
+	}
+
+	// Create a string variable to hold the fee flag value
+	var feeFlag string
+
 	// Set configurations using environment variables or flags
 	flag.IntVar(&configurations.Port, "port", 4000, "API server port")
 	flag.StringVar(&configurations.Env, "env", os.Getenv("ENVIROMENT"), "Environment (development|staging|production)")
@@ -24,9 +36,22 @@ func Set() Config {
 	flag.IntVar(&configurations.Db.MaxIdleConns, "db-max-idle-conns", 25, "PostgreSQL max idle connections")
 	flag.DurationVar(&configurations.Db.MaxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgreSQL max connection idle time")
 	flag.IntVar(&configurations.ExchangeRate.ExpiredTimeInMinutes, "exchange-rate-expired-time-in-minutes", exchangeRateExpiredTimeInMinutes, "Exchange rate expired time in minutes")
+	flag.StringVar(&feeFlag, "multi-currency-fee", multiCurrencyFee.String(), "Multi currency fee")
 
 	// Parse the flags
 	flag.Parse()
+
+	// Convert the fee flag string to decimal
+	if feeFlag != "" {
+		fee, err := decimal.NewFromString(feeFlag)
+		if err != nil {
+			Logger.Error("Failed to convert multi-currency-fee flag to decimal", "error", err.Error())
+			panic(err)
+		}
+		configurations.MultiCurrency.Fee = fee
+	} else {
+		configurations.MultiCurrency.Fee = multiCurrencyFee
+	}
 
 	// Set CORS Trusted Origins
 	configurations.Cors.TrustedOrigins = strings.Fields(os.Getenv("TRUSTED_ORIGINS"))

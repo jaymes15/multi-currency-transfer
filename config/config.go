@@ -1,6 +1,10 @@
 package config
 
-import "time"
+import (
+	"time"
+
+	"github.com/shopspring/decimal"
+)
 
 type Config struct {
 	Port int
@@ -16,5 +20,8 @@ type Config struct {
 	}
 	ExchangeRate struct {
 		ExpiredTimeInMinutes int
+	}
+	MultiCurrency struct {
+		Fee decimal.Decimal
 	}
 }

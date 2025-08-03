@@ -145,10 +145,13 @@ func TestGetExchangeRateHTTP_Success(t *testing.T) {
 
 	// Assert the response structure
 	require.NotNil(t, response["exchange_rate"])
-	require.Equal(t, "100", response["amount_to_send"])
-	require.Equal(t, "85", response["amount_to_receive"])
-	require.Equal(t, true, response["can_transact"])
-	require.Equal(t, "Exchange rate available for transaction", response["message"])
+	exchangeRateData := response["exchange_rate"].(map[string]interface{})
+	require.Equal(t, "100", exchangeRateData["amount_to_send"])
+	require.Equal(t, "85", exchangeRateData["amount_to_receive"])
+	require.NotNil(t, exchangeRateData["fee"])
+	require.NotNil(t, exchangeRateData["total_amount"])
+	require.Equal(t, true, exchangeRateData["can_transact"])
+	require.Equal(t, "Exchange rate available for transaction", exchangeRateData["message"])
 }
 
 func TestGetExchangeRateHTTP_ExpiredRate(t *testing.T) {
@@ -206,10 +209,13 @@ func TestGetExchangeRateHTTP_ExpiredRate(t *testing.T) {
 
 	// Assert the response structure
 	require.NotNil(t, response["exchange_rate"])
-	require.Equal(t, "100", response["amount_to_send"])
-	require.Equal(t, "85", response["amount_to_receive"])
-	require.Equal(t, false, response["can_transact"])
-	require.Equal(t, "Exchange rate expired", response["message"])
+	exchangeRateData := response["exchange_rate"].(map[string]interface{})
+	require.Equal(t, "100", exchangeRateData["amount_to_send"])
+	require.Equal(t, "85", exchangeRateData["amount_to_receive"])
+	require.NotNil(t, exchangeRateData["fee"])
+	require.NotNil(t, exchangeRateData["total_amount"])
+	require.Equal(t, false, exchangeRateData["can_transact"])
+	require.Equal(t, "Exchange rate expired", exchangeRateData["message"])
 }
 
 func TestGetExchangeRateHTTP_InvalidRequest(t *testing.T) {
@@ -360,13 +366,18 @@ func TestGetExchangeRateHTTP_ResponseBody(t *testing.T) {
 
 	// Verify response structure
 	require.Contains(t, response, "exchange_rate")
-	require.Contains(t, response, "amount_to_send")
-	require.Contains(t, response, "amount_to_receive")
-	require.Contains(t, response, "can_transact")
-	require.Contains(t, response, "message")
 
 	// Verify exchange rate details
-	exchangeRate := response["exchange_rate"].(map[string]interface{})
+	exchangeRateData := response["exchange_rate"].(map[string]interface{})
+	require.Contains(t, exchangeRateData, "amount_to_send")
+	require.Contains(t, exchangeRateData, "amount_to_receive")
+	require.Contains(t, exchangeRateData, "can_transact")
+	require.Contains(t, exchangeRateData, "message")
+	require.Contains(t, exchangeRateData, "fee")
+	require.Contains(t, exchangeRateData, "total_amount")
+
+	// Verify nested exchange rate details
+	exchangeRate := exchangeRateData["exchange_rate"].(map[string]interface{})
 	require.Equal(t, "USD", exchangeRate["from_currency"])
 	require.Equal(t, "EUR", exchangeRate["to_currency"])
 	require.Equal(t, "0.85", exchangeRate["rate"])
