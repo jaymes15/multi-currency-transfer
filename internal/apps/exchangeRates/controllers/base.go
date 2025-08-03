@@ -5,10 +5,10 @@ import (
 )
 
 type ExchangeRateController struct {
-	exchangeRateService *services.ExchangeRateService
+	exchangeRateService services.ExchangeRateServiceInterface
 }
 
-func NewExchangeRateController(exchangeRateService *services.ExchangeRateService) *ExchangeRateController {
+func NewExchangeRateController(exchangeRateService services.ExchangeRateServiceInterface) *ExchangeRateController {
 	return &ExchangeRateController{
 		exchangeRateService: exchangeRateService,
 	}

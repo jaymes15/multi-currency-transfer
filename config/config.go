@@ -14,4 +14,7 @@ type Config struct {
 	Cors struct {
 		TrustedOrigins []string
 	}
+	ExchangeRate struct {
+		ExpiredTimeInMinutes int
+	}
 }

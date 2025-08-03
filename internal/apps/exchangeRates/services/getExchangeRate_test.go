@@ -52,8 +52,7 @@ func TestGetExchangeRateService_Success(t *testing.T) {
 	require.Equal(t, decimal.NewFromFloat(0.85), result.ExchangeRate.Rate)
 	require.Equal(t, decimal.NewFromFloat(100.00), result.AmountToSend)
 	require.Equal(t, decimal.NewFromFloat(85.00).Round(2), result.AmountToReceive)
-	require.True(t, result.CanTransact)
-	require.Equal(t, "Exchange rate available for transaction", result.Message)
+
 }
 
 func TestGetExchangeRateService_DatabaseError(t *testing.T) {

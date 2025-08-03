@@ -8,12 +8,11 @@ import (
 	"lemfi/simplebank/internal/apps/currencies"
 	exchangeRateErrors "lemfi/simplebank/internal/apps/exchangeRates/errors"
 	requests "lemfi/simplebank/internal/apps/exchangeRates/requests"
-	responses "lemfi/simplebank/internal/apps/exchangeRates/responses"
 
 	"github.com/shopspring/decimal"
 )
 
-func (exchangeRateRepository *ExchangeRateRepository) GetExchangeRate(ctx context.Context, payload requests.GetExchangeRateRequest) (responses.GetExchangeRateResponse, error) {
+func (exchangeRateRepository *ExchangeRateRepository) GetExchangeRate(ctx context.Context, payload requests.GetExchangeRateRequest) (db.ExchangeRate, error) {
 	config.Logger.Info("Fetching exchange rate for currency pair",
 		"from_currency", payload.FromCurrency,
 		"to_currency", payload.ToCurrency,
@@ -23,18 +22,18 @@ func (exchangeRateRepository *ExchangeRateRepository) GetExchangeRate(ctx contex
 	// Validate currencies are supported
 	if !currencies.IsSupportedCurrency(currencies.Currency(payload.FromCurrency)) {
 		config.Logger.Error("From currency is not supported", "currency", payload.FromCurrency)
-		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrUnsupportedCurrency
+		return db.ExchangeRate{}, exchangeRateErrors.ErrUnsupportedCurrency
 	}
 
 	if !currencies.IsSupportedCurrency(currencies.Currency(payload.ToCurrency)) {
 		config.Logger.Error("To currency is not supported", "currency", payload.ToCurrency)
-		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrUnsupportedCurrency
+		return db.ExchangeRate{}, exchangeRateErrors.ErrUnsupportedCurrency
 	}
 
 	// Validate amount is positive
 	if payload.Amount.LessThanOrEqual(decimal.Zero) {
 		config.Logger.Error("Invalid amount", "amount", payload.Amount.String())
-		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrInvalidAmount
+		return db.ExchangeRate{}, exchangeRateErrors.ErrInvalidAmount
 	}
 
 	// Get exchange rate from database
@@ -48,39 +47,8 @@ func (exchangeRateRepository *ExchangeRateRepository) GetExchangeRate(ctx contex
 			"to_currency", payload.ToCurrency,
 			"error", err.Error(),
 		)
-		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrExchangeRateNotFound
+		return db.ExchangeRate{}, exchangeRateErrors.ErrExchangeRateNotFound
 	}
 
-	// Convert database result to response format
-	exchangeRate := responses.ExchangeRateResponse{
-		ID:           dbExchangeRate.ID,
-		FromCurrency: dbExchangeRate.FromCurrency,
-		ToCurrency:   dbExchangeRate.ToCurrency,
-		Rate:         dbExchangeRate.Rate,
-		CreatedAt:    dbExchangeRate.CreatedAt.Time,
-	}
-
-	// Calculate amounts
-	amountToSend := payload.Amount
-	amountToReceive := payload.Amount.Mul(dbExchangeRate.Rate).Round(2)
-
-	// Determine if transaction is possible
-	canTransact := true
-	message := "Exchange rate available for transaction"
-
-	response := responses.GetExchangeRateResponse{
-		ExchangeRate:    exchangeRate,
-		AmountToSend:    amountToSend,
-		AmountToReceive: amountToReceive,
-		CanTransact:     canTransact,
-		Message:         message,
-	}
-
-	config.Logger.Info("Successfully fetched exchange rate",
-		"rate", dbExchangeRate.Rate.String(),
-		"amount_to_send", amountToSend.String(),
-		"amount_to_receive", amountToReceive.String(),
-	)
-
-	return response, nil
+	return dbExchangeRate, nil
 }

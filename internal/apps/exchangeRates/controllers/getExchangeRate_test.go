@@ -2,21 +2,93 @@ package exchangeRates
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	mockdb "lemfi/simplebank/db/mock"
 	db "lemfi/simplebank/db/sqlc"
+	requests "lemfi/simplebank/internal/apps/exchangeRates/requests"
+	responses "lemfi/simplebank/internal/apps/exchangeRates/responses"
+	respositories "lemfi/simplebank/internal/apps/exchangeRates/respositories"
 	services "lemfi/simplebank/internal/apps/exchangeRates/services"
 	testhelpers "lemfi/simplebank/internal/apps/exchangeRates/testHelpers"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
 )
+
+// MockExchangeRateService for testing with controllable expiration logic
+type MockExchangeRateService struct {
+	repo          respositories.ExchangeRateRepositoryInterface
+	isExpiredFunc func(db.ExchangeRate) bool
+}
+
+func NewMockExchangeRateService(repo respositories.ExchangeRateRepositoryInterface) *MockExchangeRateService {
+	return &MockExchangeRateService{
+		repo: repo,
+	}
+}
+
+func (m *MockExchangeRateService) SetIsExpiredFunc(fn func(db.ExchangeRate) bool) {
+	m.isExpiredFunc = fn
+}
+
+func (m *MockExchangeRateService) GetExchangeRate(ctx context.Context, payload requests.GetExchangeRateRequest) (responses.GetExchangeRateResponse, error) {
+	dbExchangeRate, err := m.repo.GetExchangeRate(ctx, payload)
+	if err != nil {
+		return responses.GetExchangeRateResponse{}, err
+	}
+
+	exchangeRate := responses.NewExchangeRateResponse(dbExchangeRate)
+	amountToSend := payload.Amount
+	amountToReceive := payload.Amount.Mul(dbExchangeRate.Rate).Round(2)
+
+	canTransact := false
+	message := "Exchange rate expired"
+
+	// Use mock function if set, otherwise assume not expired
+	if m.isExpiredFunc != nil {
+		if !m.isExpiredFunc(dbExchangeRate) {
+			canTransact = true
+			message = "Exchange rate available for transaction"
+		}
+	} else {
+		canTransact = true
+		message = "Exchange rate available for transaction"
+	}
+
+	return responses.GetExchangeRateResponse{
+		ExchangeRate:    exchangeRate,
+		AmountToSend:    amountToSend,
+		AmountToReceive: amountToReceive,
+		CanTransact:     canTransact,
+		Message:         message,
+	}, nil
+}
+
+func (m *MockExchangeRateService) ListExchangeRates(ctx context.Context) (responses.ListExchangeRatesResponse, error) {
+	rates, err := m.repo.ListExchangeRates(ctx)
+	if err != nil {
+		return responses.ListExchangeRatesResponse{}, err
+	}
+
+	exchangeRates := make([]responses.ExchangeRateResponse, len(rates))
+	for i, rate := range rates {
+		exchangeRates[i] = responses.NewExchangeRateResponse(rate)
+	}
+
+	return responses.ListExchangeRatesResponse{
+		ExchangeRates: exchangeRates,
+		Total:         len(exchangeRates),
+	}, nil
+}
 
 func TestGetExchangeRateHTTP_Success(t *testing.T) {
 	ctrl := gomock.NewController(t)
@@ -24,20 +96,27 @@ func TestGetExchangeRateHTTP_Success(t *testing.T) {
 
 	store := mockdb.NewMockStore(ctrl)
 
-	// Create test data
+	// Create test data with recent creation time (not expired)
 	expectedRate := db.ExchangeRate{
 		ID:           1,
 		FromCurrency: "USD",
 		ToCurrency:   "EUR",
 		Rate:         decimal.NewFromFloat(0.85),
+		CreatedAt:    pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	}
 
 	// Expect exchange rate to be fetched
 	store.EXPECT().GetExchangeRate(gomock.Any(), gomock.Any()).Return(expectedRate, nil).Times(1)
 
 	mockRepo := testhelpers.NewMockExchangeRateRepository(store)
-	exchangeRateService := services.NewExchangeRateService(mockRepo)
-	exchangeRateController := NewExchangeRateController(exchangeRateService)
+	mockService := NewMockExchangeRateService(mockRepo)
+
+	// Mock the expiration logic to return false (not expired)
+	mockService.SetIsExpiredFunc(func(exchangeRate db.ExchangeRate) bool {
+		return false // Not expired
+	})
+
+	exchangeRateController := NewExchangeRateController(mockService)
 
 	router := gin.New()
 	router.POST("/exchange-rates/calculate", exchangeRateController.GetExchangeRateController)
@@ -60,6 +139,71 @@ func TestGetExchangeRateHTTP_Success(t *testing.T) {
 	router.ServeHTTP(recorder, request)
 
 	require.Equal(t, http.StatusOK, recorder.Code)
+
+	// Parse response to verify can_transact is true for non-expired rate
+	var response map[string]interface{}
+	err = json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	require.Equal(t, true, response["can_transact"])
+	require.Equal(t, "Exchange rate available for transaction", response["message"])
+}
+
+func TestGetExchangeRateHTTP_ExpiredRate(t *testing.T) {
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	store := mockdb.NewMockStore(ctrl)
+
+	// Create test data with old creation time (expired)
+	expectedRate := db.ExchangeRate{
+		ID:           1,
+		FromCurrency: "USD",
+		ToCurrency:   "EUR",
+		Rate:         decimal.NewFromFloat(0.85),
+		CreatedAt:    pgtype.Timestamptz{Time: time.Now().Add(-24 * time.Hour), Valid: true}, // 24 hours ago
+	}
+
+	// Expect exchange rate to be fetched
+	store.EXPECT().GetExchangeRate(gomock.Any(), gomock.Any()).Return(expectedRate, nil).Times(1)
+
+	mockRepo := testhelpers.NewMockExchangeRateRepository(store)
+	mockService := NewMockExchangeRateService(mockRepo)
+
+	// Mock the expiration logic to return true (expired)
+	mockService.SetIsExpiredFunc(func(exchangeRate db.ExchangeRate) bool {
+		return true // Expired
+	})
+
+	exchangeRateController := NewExchangeRateController(mockService)
+
+	router := gin.New()
+	router.POST("/exchange-rates/calculate", exchangeRateController.GetExchangeRateController)
+
+	// Create request body
+	requestBody := map[string]interface{}{
+		"from_currency": "USD",
+		"to_currency":   "EUR",
+		"amount":        "100.00",
+	}
+
+	body, err := json.Marshal(requestBody)
+	require.NoError(t, err)
+
+	recorder := httptest.NewRecorder()
+	request, err := http.NewRequest(http.MethodPost, "/exchange-rates/calculate", bytes.NewBuffer(body))
+	require.NoError(t, err)
+	request.Header.Set("Content-Type", "application/json")
+
+	router.ServeHTTP(recorder, request)
+
+	require.Equal(t, http.StatusOK, recorder.Code)
+
+	// Parse response to verify can_transact is false for expired rate
+	var response map[string]interface{}
+	err = json.Unmarshal(recorder.Body.Bytes(), &response)
+	require.NoError(t, err)
+	require.Equal(t, false, response["can_transact"])
+	require.Equal(t, "Exchange rate expired", response["message"])
 }
 
 func TestGetExchangeRateHTTP_InvalidRequest(t *testing.T) {
@@ -163,6 +307,7 @@ func TestGetExchangeRateHTTP_ResponseBody(t *testing.T) {
 		FromCurrency: "USD",
 		ToCurrency:   "EUR",
 		Rate:         decimal.NewFromFloat(0.85),
+		CreatedAt:    pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	}
 
 	store.EXPECT().GetExchangeRate(gomock.Any(), gomock.Any()).Return(expectedRate, nil).Times(1)

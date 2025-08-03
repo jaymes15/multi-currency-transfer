@@ -10,12 +10,21 @@ import (
 func (exchangeRateService *ExchangeRateService) ListExchangeRates(ctx context.Context) (responses.ListExchangeRatesResponse, error) {
 	config.Logger.Info("Service: Listing all exchange rates")
 
-	result, err := exchangeRateService.exchangeRateRepository.ListExchangeRates(ctx)
+	dbExchangeRates, err := exchangeRateService.exchangeRateRepository.ListExchangeRates(ctx)
 	if err != nil {
 		config.Logger.Error("Service: Failed to list exchange rates", "error", err.Error())
 		return responses.ListExchangeRatesResponse{}, err
 	}
 
-	config.Logger.Info("Service: Successfully listed exchange rates", "total", result.Total)
-	return result, nil
+	// Convert database results to response format
+	exchangeRates := make([]responses.ExchangeRateResponse, len(dbExchangeRates))
+	for i, rate := range dbExchangeRates {
+		exchangeRates[i] = responses.NewExchangeRateResponse(rate)
+	}
+
+	config.Logger.Info("Service: Successfully listed exchange rates", "total", len(exchangeRates))
+	return responses.ListExchangeRatesResponse{
+		ExchangeRates: exchangeRates,
+		Total:         len(exchangeRates),
+	}, nil
 }
