@@ -18,7 +18,7 @@ INSERT INTO exchange_rates (
   rate
 ) VALUES (
   $1, $2, $3
-) RETURNING id, from_currency, to_currency, rate, created_at
+) RETURNING id, from_currency, to_currency, rate, created_at, updated_at
 `
 
 type CreateExchangeRateParams struct {
@@ -36,6 +36,7 @@ func (q *Queries) CreateExchangeRate(ctx context.Context, arg CreateExchangeRate
 		&i.ToCurrency,
 		&i.Rate,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

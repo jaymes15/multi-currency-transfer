@@ -10,7 +10,7 @@ import (
 )
 
 const listExchangeRates = `-- name: ListExchangeRates :many
-SELECT id, from_currency, to_currency, rate, created_at FROM exchange_rates
+SELECT id, from_currency, to_currency, rate, created_at, updated_at FROM exchange_rates
 ORDER BY from_currency, to_currency
 `
 
@@ -29,6 +29,7 @@ func (q *Queries) ListExchangeRates(ctx context.Context) ([]ExchangeRate, error)
 			&i.ToCurrency,
 			&i.Rate,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}

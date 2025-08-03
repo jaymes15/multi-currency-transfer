@@ -17,6 +17,19 @@ func (exchangeRateRepository *ExchangeRateRepository) ListExchangeRates(ctx cont
 		return []db.ExchangeRate{}, err
 	}
 
-	config.Logger.Info("Successfully fetched exchange rates", "total", len(dbExchangeRates))
-	return dbExchangeRates, nil
+	// Convert ListExchangeRatesRow to ExchangeRate
+	exchangeRates := make([]db.ExchangeRate, len(dbExchangeRates))
+	for i, rate := range dbExchangeRates {
+		exchangeRates[i] = db.ExchangeRate{
+			ID:           rate.ID,
+			FromCurrency: rate.FromCurrency,
+			ToCurrency:   rate.ToCurrency,
+			Rate:         rate.Rate,
+			CreatedAt:    rate.CreatedAt,
+			UpdatedAt:    rate.UpdatedAt,
+		}
+	}
+
+	config.Logger.Info("Successfully fetched exchange rates", "total", len(exchangeRates))
+	return exchangeRates, nil
 }

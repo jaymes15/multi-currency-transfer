@@ -10,7 +10,7 @@ import (
 )
 
 const getExchangeRate = `-- name: GetExchangeRate :one
-SELECT id, from_currency, to_currency, rate, created_at FROM exchange_rates
+SELECT id, from_currency, to_currency, rate, created_at, updated_at FROM exchange_rates
 WHERE from_currency = $1 AND to_currency = $2
 LIMIT 1
 `
@@ -29,6 +29,7 @@ func (q *Queries) GetExchangeRate(ctx context.Context, arg GetExchangeRateParams
 		&i.ToCurrency,
 		&i.Rate,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }

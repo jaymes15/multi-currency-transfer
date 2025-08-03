@@ -4,8 +4,12 @@ import (
 	"context"
 
 	"lemfi/simplebank/config"
+	"lemfi/simplebank/internal/apps/currencies"
+	exchangeRateErrors "lemfi/simplebank/internal/apps/exchangeRates/errors"
 	requests "lemfi/simplebank/internal/apps/exchangeRates/requests"
 	responses "lemfi/simplebank/internal/apps/exchangeRates/responses"
+
+	"github.com/shopspring/decimal"
 )
 
 func (exchangeRateService *ExchangeRateService) GetExchangeRate(ctx context.Context, payload requests.GetExchangeRateRequest) (responses.GetExchangeRateResponse, error) {
@@ -14,6 +18,23 @@ func (exchangeRateService *ExchangeRateService) GetExchangeRate(ctx context.Cont
 		"to_currency", payload.ToCurrency,
 		"amount", payload.Amount.String(),
 	)
+
+	// Validate currencies are supported
+	if !currencies.IsSupportedCurrency(currencies.Currency(payload.FromCurrency)) {
+		config.Logger.Error("From currency is not supported", "currency", payload.FromCurrency)
+		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrUnsupportedCurrency
+	}
+
+	if !currencies.IsSupportedCurrency(currencies.Currency(payload.ToCurrency)) {
+		config.Logger.Error("To currency is not supported", "currency", payload.ToCurrency)
+		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrUnsupportedCurrency
+	}
+
+	// Validate amount is positive
+	if payload.Amount.LessThanOrEqual(decimal.Zero) {
+		config.Logger.Error("Invalid amount", "amount", payload.Amount.String())
+		return responses.GetExchangeRateResponse{}, exchangeRateErrors.ErrInvalidAmount
+	}
 
 	dbExchangeRate, err := exchangeRateService.exchangeRateRepository.GetExchangeRate(ctx, payload)
 	if err != nil {

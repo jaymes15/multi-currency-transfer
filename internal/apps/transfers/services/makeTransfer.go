@@ -5,6 +5,7 @@ import (
 	"lemfi/simplebank/config"
 	"lemfi/simplebank/internal/apps/core"
 	"lemfi/simplebank/internal/apps/currencies"
+	exchangeRateErrors "lemfi/simplebank/internal/apps/exchangeRates/errors"
 	exchangeRateRequests "lemfi/simplebank/internal/apps/exchangeRates/requests"
 	transferErrors "lemfi/simplebank/internal/apps/transfers/errors"
 	requests "lemfi/simplebank/internal/apps/transfers/requests"
@@ -54,6 +55,12 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 	exchangeRate := decimal.NewFromInt(1) // Default to 1:1 for same currency
 
 	if payload.FromCurrency != payload.ToCurrency {
+
+		if payload.ExchangeRate.LessThanOrEqual(decimal.Zero) {
+			config.Logger.Error("Exchange rate is zero", "exchange_rate", payload.ExchangeRate)
+			return responses.MakeTransferResponse{}, exchangeRateErrors.ErrExchangeRateZero
+		}
+
 		// Use exchange rate service to get exchange rate
 		exchangeRateRequest := exchangeRateRequests.GetExchangeRateRequest{
 			FromCurrency: payload.FromCurrency,
@@ -74,6 +81,16 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 			}
 			// If it's not a client error, return a generic server error
 			return responses.MakeTransferResponse{}, transferErrors.ErrExchangeRateNotFound
+		}
+
+		if !exchangeRateResponse.CanTransact {
+			config.Logger.Error("Exchange rate expired", "exchange_rate", exchangeRateResponse.ExchangeRate)
+			return responses.MakeTransferResponse{}, exchangeRateErrors.ErrExchangeRateExpired
+		}
+
+		if !payload.ExchangeRate.IsZero() && !exchangeRateResponse.ExchangeRate.Rate.Equal(payload.ExchangeRate) {
+			config.Logger.Error("Exchange rate mismatch", "exchange_rate", exchangeRateResponse.ExchangeRate, "payload_exchange_rate", payload.ExchangeRate)
+			return responses.MakeTransferResponse{}, exchangeRateErrors.ErrExchangeRateMismatch
 		}
 
 		exchangeRate = exchangeRateResponse.ExchangeRate.Rate

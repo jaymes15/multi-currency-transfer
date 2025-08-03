@@ -74,8 +74,8 @@ func createRandomTransfer(t *testing.T) Transfer {
 		Amount:          amount,
 		ConvertedAmount: amount,                             // For simple transfers, use same amount
 		ExchangeRate:    decimal.NewFromFloat(1.0).Round(8), // 8 decimal places for exchange rates
-		FromCurrency:    pgtype.Text{},
-		ToCurrency:      pgtype.Text{},
+		FromCurrency:    pgtype.Text{String: fromAccount.Currency, Valid: true},
+		ToCurrency:      pgtype.Text{String: toAccount.Currency, Valid: true},
 	}
 
 	transfer, err := testQueries.CreateTransfer(context.Background(), arg)

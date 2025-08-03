@@ -22,4 +22,19 @@ var (
 		Message: "invalid amount",
 		Status:  400,
 	}
+
+	ErrExchangeRateExpired = core.ClientError{
+		Message: "exchange rate expired",
+		Status:  400,
+	}
+
+	ErrExchangeRateMismatch = core.ClientError{
+		Message: "exchange rate mismatch",
+		Status:  400,
+	}
+
+	ErrExchangeRateZero = core.ClientError{
+		Message: "exchange rate is zero",
+		Status:  400,
+	}
 )

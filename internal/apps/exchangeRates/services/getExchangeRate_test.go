@@ -8,7 +8,9 @@ import (
 	requests "lemfi/simplebank/internal/apps/exchangeRates/requests"
 	testhelpers "lemfi/simplebank/internal/apps/exchangeRates/testHelpers"
 	"testing"
+	"time"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/mock/gomock"
@@ -26,6 +28,8 @@ func TestGetExchangeRateService_Success(t *testing.T) {
 		FromCurrency: "USD",
 		ToCurrency:   "EUR",
 		Rate:         decimal.NewFromFloat(0.85),
+		CreatedAt:    pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		UpdatedAt:    pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	}
 
 	// Expect exchange rate to be fetched
@@ -52,7 +56,6 @@ func TestGetExchangeRateService_Success(t *testing.T) {
 	require.Equal(t, decimal.NewFromFloat(0.85), result.ExchangeRate.Rate)
 	require.Equal(t, decimal.NewFromFloat(100.00), result.AmountToSend)
 	require.Equal(t, decimal.NewFromFloat(85.00).Round(2), result.AmountToReceive)
-
 }
 
 func TestGetExchangeRateService_DatabaseError(t *testing.T) {
@@ -123,6 +126,8 @@ func TestGetExchangeRateService_ZeroAmount(t *testing.T) {
 		FromCurrency: "USD",
 		ToCurrency:   "EUR",
 		Rate:         decimal.NewFromFloat(0.85),
+		CreatedAt:    pgtype.Timestamptz{Time: time.Now(), Valid: true},
+		UpdatedAt:    pgtype.Timestamptz{Time: time.Now(), Valid: true},
 	}
 	store.EXPECT().GetExchangeRate(gomock.Any(), gomock.Any()).Return(expectedRate, nil).Times(1)
 

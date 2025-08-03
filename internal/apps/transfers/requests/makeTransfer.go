@@ -8,4 +8,5 @@ type MakeTransferRequest struct {
 	Amount        decimal.Decimal `json:"amount" validate:"required"`
 	FromCurrency  string          `json:"from_currency" validate:"required"`
 	ToCurrency    string          `json:"to_currency" validate:"required"`
+	ExchangeRate  decimal.Decimal `json:"exchange_rate" validate:"omitempty"`
 }

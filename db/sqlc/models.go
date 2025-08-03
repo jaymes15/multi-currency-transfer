@@ -34,6 +34,7 @@ type ExchangeRate struct {
 	ToCurrency   string             `json:"to_currency"`
 	Rate         decimal.Decimal    `json:"rate"`
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
 }
 
 type Transfer struct {

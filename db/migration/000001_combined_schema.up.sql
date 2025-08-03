@@ -38,6 +38,7 @@ CREATE TABLE exchange_rates (
     to_currency VARCHAR(3) NOT NULL,
     rate DECIMAL(20,8) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(from_currency, to_currency)
 );
 
