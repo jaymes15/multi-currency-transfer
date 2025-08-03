@@ -10,7 +10,7 @@ END;
 $$ language 'plpgsql';
 
 -- Create trigger on exchange_rates table
-CREATE TRIGGER update_exchange_rates_updated_at 
-    BEFORE UPDATE ON exchange_rates 
-    FOR EACH ROW 
+CREATE TRIGGER update_exchange_rates_updated_at
+    BEFORE UPDATE ON exchange_rates
+    FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column(); 

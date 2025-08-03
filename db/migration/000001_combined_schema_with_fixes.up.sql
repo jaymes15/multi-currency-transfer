@@ -1,4 +1,4 @@
--- Combined schema migration for SimpleBank
+-- Combined schema migration for SimpleBank with exchange rate precision fixes
 -- This includes all tables with proper DECIMAL types for financial precision
 
 -- Create accounts table with DECIMAL balance
@@ -19,13 +19,14 @@ CREATE TABLE "entries" (
 );
 
 -- Create transfers table with DECIMAL amounts and cross-currency support
+-- Using DECIMAL(20,8) for exchange_rate to handle large rates like GBP to NGN (2000+)
 CREATE TABLE "transfers" (
   "id" bigserial PRIMARY KEY,
   "from_account_id" bigint NOT NULL,
   "to_account_id" bigint NOT NULL,
   "amount" DECIMAL(20,2) NOT NULL,
   "converted_amount" DECIMAL(20,2),
-  "exchange_rate" DECIMAL(10,8),
+  "exchange_rate" DECIMAL(20,8),
   "from_currency" VARCHAR(3),
   "to_currency" VARCHAR(3),
   "created_at" timestamptz NOT NULL DEFAULT (now())

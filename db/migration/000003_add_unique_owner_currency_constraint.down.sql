@@ -1,2 +1,0 @@
-ALTER TABLE accounts
-DROP CONSTRAINT unique_owner_currency;
