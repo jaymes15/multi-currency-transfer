@@ -8,5 +8,5 @@ import (
 )
 
 type TransferRespositoryInterface interface {
-	MakeTransfer(payload requests.MakeTransferRequest, convertedAmount decimal.Decimal, exchangeRate decimal.Decimal) (db.TransferTxResult, error)
+	MakeTransfer(payload requests.MakeTransferRequest, convertedAmount decimal.Decimal, exchangeRate decimal.Decimal, fee decimal.Decimal) (db.TransferTxResult, error)
 }

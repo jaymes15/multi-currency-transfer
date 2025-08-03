@@ -13,6 +13,7 @@ func (transferRespository *TransferRespository) MakeTransfer(
 	payload requests.MakeTransferRequest,
 	convertedAmount decimal.Decimal,
 	exchangeRate decimal.Decimal,
+	fee decimal.Decimal,
 ) (db.TransferTxResult, error) {
 	// Validate that accounts exist and have sufficient balance
 	fromAccount, err := transferRespository.queries.GetAccount(transferRespository.context, payload.FromAccountID)
@@ -44,8 +45,16 @@ func (transferRespository *TransferRespository) MakeTransfer(
 		return db.TransferTxResult{}, transferErrors.ErrToAccountCurrencyMismatch
 	}
 
-	// Validate sufficient balance
-	if fromAccount.Balance.LessThan(payload.Amount) {
+	// Validate sufficient balance (including fee)
+	totalAmount := payload.Amount.Add(fee)
+	if fromAccount.Balance.LessThan(totalAmount) {
+		config.Logger.Error("Insufficient balance",
+			"account_id", payload.FromAccountID,
+			"account_balance", fromAccount.Balance,
+			"transfer_amount", payload.Amount,
+			"fee", fee,
+			"total_required", totalAmount,
+		)
 		return db.TransferTxResult{}, transferErrors.ErrInsufficientBalance
 	}
 
@@ -58,6 +67,7 @@ func (transferRespository *TransferRespository) MakeTransfer(
 		ExchangeRate:    exchangeRate,
 		FromCurrency:    payload.FromCurrency,
 		ToCurrency:      payload.ToCurrency,
+		Fee:             fee,
 	}
 
 	// Execute the transfer transaction

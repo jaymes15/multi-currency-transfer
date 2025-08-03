@@ -49,4 +49,6 @@ type Transfer struct {
 	FromCurrency    pgtype.Text     `json:"from_currency"`
 	ToCurrency      pgtype.Text     `json:"to_currency"`
 	CreatedAt       time.Time       `json:"created_at"`
+	// Transaction fee amount in source currency
+	Fee decimal.Decimal `json:"fee"`
 }

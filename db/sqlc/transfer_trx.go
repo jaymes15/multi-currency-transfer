@@ -17,6 +17,7 @@ type TransferTxParams struct {
 	ExchangeRate    decimal.Decimal `json:"exchange_rate,omitempty"`
 	FromCurrency    string          `json:"from_currency,omitempty"`
 	ToCurrency      string          `json:"to_currency,omitempty"`
+	Fee             decimal.Decimal `json:"fee,omitempty"`
 }
 
 // TransferTxResult is the result of the transfer transaction
@@ -56,9 +57,10 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 			return fmt.Errorf("to account currency mismatch: expected %s, got %s", toAccount.Currency, arg.ToCurrency)
 		}
 
-		// Validate sufficient balance
-		if fromAccount.Balance.LessThan(arg.Amount) {
-			return fmt.Errorf("insufficient balance: account has %s, transfer requires %s", fromAccount.Balance.String(), arg.Amount.String())
+		// Validate sufficient balance (including fee)
+		totalAmount := arg.Amount.Add(arg.Fee)
+		if fromAccount.Balance.LessThan(totalAmount) {
+			return fmt.Errorf("insufficient balance: account has %s, transfer requires %s (amount: %s + fee: %s)", fromAccount.Balance.String(), totalAmount.String(), arg.Amount.String(), arg.Fee.String())
 		}
 
 		// Prepare currency data
@@ -72,7 +74,7 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 			toCurrency.Scan(arg.ToCurrency)
 		}
 
-		result.Transfer, err = q.CreateTransfer(ctx, CreateTransferParams{
+		createTransferResult, err := q.CreateTransfer(ctx, CreateTransferParams{
 			FromAccountID:   arg.FromAccountID,
 			ToAccountID:     arg.ToAccountID,
 			Amount:          arg.Amount,
@@ -80,14 +82,29 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 			ExchangeRate:    arg.ExchangeRate,
 			FromCurrency:    fromCurrency,
 			ToCurrency:      toCurrency,
+			Fee:             arg.Fee,
 		})
 		if err != nil {
 			return err
 		}
 
-		// Create entries with original amount (from account) and converted amount (to account)
-		fromEntryAmount := arg.Amount.Neg()  // Debit original amount (negative)
-		toEntryAmount := arg.ConvertedAmount // Credit converted amount
+		// Convert CreateTransferRow to Transfer
+		result.Transfer = Transfer{
+			ID:              createTransferResult.ID,
+			FromAccountID:   createTransferResult.FromAccountID,
+			ToAccountID:     createTransferResult.ToAccountID,
+			Amount:          createTransferResult.Amount,
+			ConvertedAmount: createTransferResult.ConvertedAmount,
+			ExchangeRate:    createTransferResult.ExchangeRate,
+			FromCurrency:    createTransferResult.FromCurrency,
+			ToCurrency:      createTransferResult.ToCurrency,
+			Fee:             createTransferResult.Fee,
+			CreatedAt:       createTransferResult.CreatedAt,
+		}
+
+		// Create entries with original amount + fee (from account) and converted amount (to account)
+		fromEntryAmount := arg.Amount.Add(arg.Fee).Neg() // Debit original amount + fee (negative)
+		toEntryAmount := arg.ConvertedAmount             // Credit converted amount
 
 		result.FromEntry, err = q.CreateEntry(ctx, CreateEntryParams{
 			AccountID: arg.FromAccountID,

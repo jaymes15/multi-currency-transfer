@@ -29,3 +29,5 @@ sql:
           go_type: "github.com/shopspring/decimal.Decimal"
         - column: "exchange_rates.rate"
           go_type: "github.com/shopspring/decimal.Decimal"
+        - column: "transfers.fee"
+          go_type: "github.com/shopspring/decimal.Decimal"

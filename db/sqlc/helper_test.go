@@ -68,6 +68,10 @@ func createRandomTransfer(t *testing.T) Transfer {
 	amountFloat := util.RandomFloat(10.0, 1000.0)
 	amount := decimal.NewFromFloat(amountFloat).Round(2)
 
+	// Create fee with 2 decimal places
+	feeFloat := util.RandomFloat(1.0, 5.0)
+	fee := decimal.NewFromFloat(feeFloat).Round(2)
+
 	arg := CreateTransferParams{
 		FromAccountID:   fromAccount.ID,
 		ToAccountID:     toAccount.ID,
@@ -76,6 +80,7 @@ func createRandomTransfer(t *testing.T) Transfer {
 		ExchangeRate:    decimal.NewFromFloat(1.0).Round(8), // 8 decimal places for exchange rates
 		FromCurrency:    pgtype.Text{String: fromAccount.Currency, Valid: true},
 		ToCurrency:      pgtype.Text{String: toAccount.Currency, Valid: true},
+		Fee:             fee,
 	}
 
 	transfer, err := testQueries.CreateTransfer(context.Background(), arg)
@@ -85,10 +90,25 @@ func createRandomTransfer(t *testing.T) Transfer {
 	require.Equal(t, arg.FromAccountID, transfer.FromAccountID)
 	require.Equal(t, arg.ToAccountID, transfer.ToAccountID)
 	require.Equal(t, arg.Amount, transfer.Amount)
+	require.Equal(t, arg.Fee, transfer.Fee)
 	require.NotZero(t, transfer.ID)
 	require.NotZero(t, transfer.CreatedAt)
 
-	return transfer
+	// Convert CreateTransferRow to Transfer
+	result := Transfer{
+		ID:              transfer.ID,
+		FromAccountID:   transfer.FromAccountID,
+		ToAccountID:     transfer.ToAccountID,
+		Amount:          transfer.Amount,
+		ConvertedAmount: transfer.ConvertedAmount,
+		ExchangeRate:    transfer.ExchangeRate,
+		FromCurrency:    transfer.FromCurrency,
+		ToCurrency:      transfer.ToCurrency,
+		Fee:             transfer.Fee,
+		CreatedAt:       transfer.CreatedAt,
+	}
+
+	return result
 }
 
 func createRandomExchangeRate(t *testing.T) ExchangeRate {

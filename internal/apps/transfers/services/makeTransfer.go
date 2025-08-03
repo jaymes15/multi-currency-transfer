@@ -53,6 +53,7 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 	// Calculate exchange rate and converted amount in service layer
 	convertedAmount := payload.Amount
 	exchangeRate := decimal.NewFromInt(1) // Default to 1:1 for same currency
+	fee := decimal.Zero                   // Default fee for same currency transfers
 
 	if payload.FromCurrency != payload.ToCurrency {
 
@@ -95,10 +96,11 @@ func (transferService *TransferService) MakeTransfer(payload requests.MakeTransf
 
 		exchangeRate = exchangeRateResponse.ExchangeRate.Rate
 		convertedAmount = exchangeRateResponse.AmountToReceive
+		fee = exchangeRateResponse.Fee
 	}
 
 	// Execute transfer through repository (includes data validation: account existence, balance check, currency matching)
-	result, err := transferService.transferRespository.MakeTransfer(payload, convertedAmount, exchangeRate)
+	result, err := transferService.transferRespository.MakeTransfer(payload, convertedAmount, exchangeRate, fee)
 	if err != nil {
 		config.Logger.Error("Transfer failed",
 			"error", err.Error(),

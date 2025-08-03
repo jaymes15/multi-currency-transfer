@@ -103,10 +103,10 @@ func (mr *MockStoreMockRecorder) CreateExchangeRate(ctx, arg any) *gomock.Call {
 }
 
 // CreateTransfer mocks base method.
-func (m *MockStore) CreateTransfer(ctx context.Context, arg db.CreateTransferParams) (db.Transfer, error) {
+func (m *MockStore) CreateTransfer(ctx context.Context, arg db.CreateTransferParams) (db.CreateTransferRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTransfer", ctx, arg)
-	ret0, _ := ret[0].(db.Transfer)
+	ret0, _ := ret[0].(db.CreateTransferRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

@@ -26,6 +26,7 @@ type TransferDetail struct {
 	FromCurrency    string          `json:"from_currency,omitempty"`
 	ToCurrency      string          `json:"to_currency,omitempty"`
 	ExchangeRate    decimal.Decimal `json:"exchange_rate,omitempty"`
+	Fee             decimal.Decimal `json:"fee,omitempty"`
 	CreatedAt       time.Time       `json:"created_at"`
 }
 
@@ -54,6 +55,7 @@ func NewMakeTransferResponse(result db.TransferTxResult) MakeTransferResponse {
 			Amount:          result.Transfer.Amount,
 			ConvertedAmount: result.Transfer.ConvertedAmount,
 			ExchangeRate:    result.Transfer.ExchangeRate,
+			Fee:             result.Transfer.Fee,
 			CreatedAt:       result.Transfer.CreatedAt,
 		},
 		FromAccount: AccountDetail{

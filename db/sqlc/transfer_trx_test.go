@@ -281,6 +281,7 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 		ExchangeRate:    exchangeRate.Rate,
 		FromCurrency:    account1.Currency,
 		ToCurrency:      account2.Currency,
+		Fee:             decimal.Zero, // No fee for this test
 	})
 
 	require.NoError(t, err)
@@ -293,6 +294,10 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	require.NotEmpty(t, transfer)
 	require.Equal(t, account1.ID, transfer.FromAccountID)
 	require.Equal(t, account2.ID, transfer.ToAccountID)
+
+	fmt.Printf(">>>>> DEBUG: expected amount=%s, actual transfer.Amount=%s\n",
+		amount.String(), transfer.Amount.String())
+
 	require.Equal(t, amount, transfer.Amount)
 	require.NotZero(t, transfer.ID)
 
@@ -335,9 +340,14 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 	require.NotEmpty(t, toAccount)
 	require.Equal(t, account2.ID, toAccount.ID)
 
-	// Check from account balance (should be reduced by the original amount)
+	// Check from account balance (should be reduced by the original amount + fee)
+	totalDebit := amount.Add(decimal.Zero) // amount + fee (fee is zero in this test)
 	diff1 := account1.Balance.Sub(fromAccount.Balance)
-	require.Equal(t, amount, diff1)
+
+	fmt.Printf(">>>>> DEBUG: amount=%s, fee=%s, totalDebit=%s, diff1=%s\n",
+		amount.String(), decimal.Zero.String(), totalDebit.String(), diff1.String())
+
+	require.Equal(t, totalDebit, diff1)
 
 	// Check to account balance (should be increased by the converted amount)
 	diff2 := toAccount.Balance.Sub(account2.Balance)
@@ -356,7 +366,7 @@ func TestTransferTxMultiCurrency(t *testing.T) {
 		updatedAccount1.Balance.String(), updatedAccount1.Currency, updatedAccount2.Balance.String(), updatedAccount2.Currency)
 
 	// Check final balances with proper arithmetic
-	expectedBalance1 := account1.Balance.Sub(amount)
+	expectedBalance1 := account1.Balance.Sub(totalDebit)
 	expectedBalance2 := account2.Balance.Add(convertedAmount)
 
 	require.Equal(t, expectedBalance1, updatedAccount1.Balance)

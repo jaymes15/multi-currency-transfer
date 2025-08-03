@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/shopspring/decimal"
@@ -20,10 +21,11 @@ INSERT INTO transfers (
   converted_amount,
   exchange_rate,
   from_currency,
-  to_currency
+  to_currency,
+  fee
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7
-) RETURNING id, from_account_id, to_account_id, amount, converted_amount, exchange_rate, from_currency, to_currency, created_at
+  $1, $2, $3, $4, $5, $6, $7, $8
+) RETURNING id, from_account_id, to_account_id, amount, converted_amount, exchange_rate, from_currency, to_currency, fee, created_at
 `
 
 type CreateTransferParams struct {
@@ -34,9 +36,23 @@ type CreateTransferParams struct {
 	ExchangeRate    decimal.Decimal `json:"exchange_rate"`
 	FromCurrency    pgtype.Text     `json:"from_currency"`
 	ToCurrency      pgtype.Text     `json:"to_currency"`
+	Fee             decimal.Decimal `json:"fee"`
 }
 
-func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (Transfer, error) {
+type CreateTransferRow struct {
+	ID              int64           `json:"id"`
+	FromAccountID   int64           `json:"from_account_id"`
+	ToAccountID     int64           `json:"to_account_id"`
+	Amount          decimal.Decimal `json:"amount"`
+	ConvertedAmount decimal.Decimal `json:"converted_amount"`
+	ExchangeRate    decimal.Decimal `json:"exchange_rate"`
+	FromCurrency    pgtype.Text     `json:"from_currency"`
+	ToCurrency      pgtype.Text     `json:"to_currency"`
+	Fee             decimal.Decimal `json:"fee"`
+	CreatedAt       time.Time       `json:"created_at"`
+}
+
+func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) (CreateTransferRow, error) {
 	row := q.db.QueryRow(ctx, createTransfer,
 		arg.FromAccountID,
 		arg.ToAccountID,
@@ -45,8 +61,9 @@ func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) 
 		arg.ExchangeRate,
 		arg.FromCurrency,
 		arg.ToCurrency,
+		arg.Fee,
 	)
-	var i Transfer
+	var i CreateTransferRow
 	err := row.Scan(
 		&i.ID,
 		&i.FromAccountID,
@@ -56,6 +73,7 @@ func (q *Queries) CreateTransfer(ctx context.Context, arg CreateTransferParams) 
 		&i.ExchangeRate,
 		&i.FromCurrency,
 		&i.ToCurrency,
+		&i.Fee,
 		&i.CreatedAt,
 	)
 	return i, err
