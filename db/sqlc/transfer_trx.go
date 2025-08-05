@@ -37,15 +37,31 @@ func (store *SQLStore) TransferTx(ctx context.Context, arg TransferTxParams) (Tr
 	err := store.execTx(ctx, func(q *Queries) error {
 		var err error
 
-		// Validate that accounts exist
-		fromAccount, err := q.GetAccount(ctx, arg.FromAccountID)
-		if err != nil {
-			return fmt.Errorf("from account not found: %w", err)
-		}
+		// Validate that accounts exist with consistent locking order (smaller ID first)
+		var fromAccount, toAccount Account
 
-		toAccount, err := q.GetAccount(ctx, arg.ToAccountID)
-		if err != nil {
-			return fmt.Errorf("to account not found: %w", err)
+		if arg.FromAccountID < arg.ToAccountID {
+			// Lock fromAccount first, then toAccount
+			fromAccount, err = q.GetAccountForUpdate(ctx, arg.FromAccountID)
+			if err != nil {
+				return fmt.Errorf("from account not found: %w", err)
+			}
+
+			toAccount, err = q.GetAccountForUpdate(ctx, arg.ToAccountID)
+			if err != nil {
+				return fmt.Errorf("to account not found: %w", err)
+			}
+		} else {
+			// Lock toAccount first, then fromAccount
+			toAccount, err = q.GetAccountForUpdate(ctx, arg.ToAccountID)
+			if err != nil {
+				return fmt.Errorf("to account not found: %w", err)
+			}
+
+			fromAccount, err = q.GetAccountForUpdate(ctx, arg.FromAccountID)
+			if err != nil {
+				return fmt.Errorf("from account not found: %w", err)
+			}
 		}
 
 		// Validate currencies match if provided
