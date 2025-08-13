@@ -16,19 +16,24 @@ type Querier interface {
 	CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
 	CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (ExchangeRate, error)
 	CreateTransfer(ctx context.Context, arg CreateTransferParams) (CreateTransferRow, error)
+	CreateUser(ctx context.Context, arg CreateUserParams) (CreateUserRow, error)
 	DeleteAccount(ctx context.Context, id int64) error
+	DeleteUser(ctx context.Context, username string) error
 	GetAccount(ctx context.Context, id int64) (Account, error)
 	GetAccountForUpdate(ctx context.Context, id int64) (Account, error)
 	GetEntry(ctx context.Context, id int64) (Entry, error)
 	GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (ExchangeRate, error)
 	GetTransfer(ctx context.Context, id int64) (GetTransferRow, error)
+	GetUser(ctx context.Context, username string) (GetUserRow, error)
 	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
 	ListAllAccounts(ctx context.Context, arg ListAllAccountsParams) ([]Account, error)
 	ListEntries(ctx context.Context, arg ListEntriesParams) ([]Entry, error)
 	ListExchangeRates(ctx context.Context) ([]ExchangeRate, error)
 	ListTransfers(ctx context.Context, arg ListTransfersParams) ([]ListTransfersRow, error)
+	ListUsers(ctx context.Context) ([]ListUsersRow, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 	UpdateExchangeRate(ctx context.Context, arg UpdateExchangeRateParams) (ExchangeRate, error)
+	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

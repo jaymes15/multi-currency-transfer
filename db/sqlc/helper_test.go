@@ -11,13 +11,42 @@ import (
 	"lemfi/simplebank/util"
 )
 
+func createRandomUser(t *testing.T) CreateUserRow {
+	// Generate random user data
+	username := util.RandomOwner()                            // Reuse existing random owner function
+	fullName := util.RandomOwner() + " " + util.RandomOwner() // Create a full name
+	email := username + "@example.com"
+	hashedPassword := "hashedpassword123" // Fixed password for testing
+
+	arg := CreateUserParams{
+		Username:       username,
+		HashedPassword: hashedPassword,
+		FullName:       fullName,
+		Email:          email,
+	}
+
+	user, err := testQueries.CreateUser(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, user)
+
+	require.Equal(t, arg.Username, user.Username)
+	require.Equal(t, arg.FullName, user.FullName)
+	require.Equal(t, arg.Email, user.Email)
+	require.NotZero(t, user.CreatedAt)
+
+	return user
+}
+
 func createRandomAccount(t *testing.T) Account {
+	// Create a user first since accounts now have foreign key constraint
+	user := createRandomUser(t)
+
 	// Create balance with 2 decimal places to match database precision
 	balanceFloat := util.RandomFloat(10.0, 1000.0)
 	balance := decimal.NewFromFloat(balanceFloat).Round(2)
 
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  balance,
 		Currency: util.RandomCurrency(),
 	}
@@ -37,12 +66,15 @@ func createRandomAccount(t *testing.T) Account {
 }
 
 func createAccountWithCurrency(t *testing.T, currency string) Account {
+	// Create a user first since accounts now have foreign key constraint
+	user := createRandomUser(t)
+
 	// Create balance with 2 decimal places to match database precision
 	balanceFloat := util.RandomFloat(10.0, 1000.0)
 	balance := decimal.NewFromFloat(balanceFloat).Round(2)
 
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  balance,
 		Currency: currency,
 	}

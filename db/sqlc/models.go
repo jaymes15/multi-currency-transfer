@@ -12,7 +12,8 @@ import (
 )
 
 type Account struct {
-	ID    int64  `json:"id"`
+	ID int64 `json:"id"`
+	// Username reference to users table
 	Owner string `json:"owner"`
 	// Account balance in account currency
 	Balance   decimal.Decimal `json:"balance"`
@@ -51,4 +52,22 @@ type Transfer struct {
 	CreatedAt       time.Time       `json:"created_at"`
 	// Transaction fee amount in source currency
 	Fee decimal.Decimal `json:"fee"`
+}
+
+// User authentication and profile information
+type User struct {
+	// Unique username for login and account ownership
+	Username string `json:"username"`
+	// BCrypt hashed password for security
+	HashedPassword string `json:"hashed_password"`
+	// User full name for display
+	FullName string `json:"full_name"`
+	// Unique email address for notifications
+	Email string `json:"email"`
+	// Email verification status for security
+	IsEmailVerified bool `json:"is_email_verified"`
+	// Timestamp of last password change for security
+	PasswordChangedAt time.Time `json:"password_changed_at"`
+	// User account creation timestamp
+	CreatedAt time.Time `json:"created_at"`
 }
