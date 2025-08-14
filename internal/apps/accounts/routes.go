@@ -4,6 +4,7 @@ import (
 	accounts "lemfi/simplebank/internal/apps/accounts/controllers"
 	respositories "lemfi/simplebank/internal/apps/accounts/respositories"
 	services "lemfi/simplebank/internal/apps/accounts/services"
+	"lemfi/simplebank/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,7 +15,14 @@ func Routes(router *gin.Engine) {
 	accountService := services.NewAccountService(accountRespository)
 	accountController := accounts.NewAccountController(accountService)
 
-	router.POST("/api/v1/accounts", accountController.CreateAccountController)
-	router.GET("/api/v1/accounts", accountController.GetAccountsController)
+	// Group accounts routes with common middleware
+	accountsGroup := router.Group("/api/v1/accounts")
+	accountsGroup.Use(
+		middleware.ValidateAuth(),
+		middleware.RequireAuthenticatedUser(),
+	)
 
+	// Register routes without repeating middleware
+	accountsGroup.POST("", accountController.CreateAccountController)
+	accountsGroup.GET("", accountController.GetAccountsController)
 }

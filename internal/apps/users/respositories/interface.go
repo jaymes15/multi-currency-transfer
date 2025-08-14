@@ -8,4 +8,5 @@ import (
 type UserRespositoryInterface interface {
 	CreateUser(payload requests.CreateUserRequest) (db.CreateUserRow, error)
 	GetUserHashedPassword(username string) (string, error)
+	GetUser(username string) (db.GetUserRow, error)
 }

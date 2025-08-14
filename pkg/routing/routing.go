@@ -4,7 +4,9 @@ import (
 	"net/http"
 
 	"lemfi/simplebank/config"
+	"lemfi/simplebank/internal/middleware"
 	"lemfi/simplebank/internal/routes"
+	"lemfi/simplebank/pkg/errorResponse"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,10 +24,9 @@ func getRouter() *gin.Engine {
 
 func registerRoutes(router *gin.Engine) http.Handler {
 	config.Logger.Info("Starting to register all routes")
-	// router.NotFound = http.HandlerFunc(errorResponse.NotFoundResponse)
-	// router.MethodNotAllowed = http.HandlerFunc(errorResponse.MethodNotAllowedResponse)
-	// registedRoutes := middleware.RegisterMiddleware(routes.Routes(router))
-	registedRoutes := routes.Routes(router)
+	router.NoRoute(errorResponse.NotFoundResponse)
+	router.NoMethod(errorResponse.MethodNotAllowedResponse)
+	registedRoutes := middleware.RegisterMiddleware(routes.Routes(router))
 
 	config.Logger.Info("Completed to register all routes")
 

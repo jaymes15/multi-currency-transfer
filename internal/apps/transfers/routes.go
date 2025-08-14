@@ -6,6 +6,7 @@ import (
 	controllers "lemfi/simplebank/internal/apps/transfers/controllers"
 	respositories "lemfi/simplebank/internal/apps/transfers/respositories"
 	services "lemfi/simplebank/internal/apps/transfers/services"
+	"lemfi/simplebank/internal/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,5 +24,13 @@ func Routes(router *gin.Engine) {
 	// Initialize controllers
 	transferController := controllers.NewTransferController(transferService)
 
-	router.POST("/api/v1/transfers", transferController.MakeTransferController)
+	// Group transfers routes with common middleware
+	transfersGroup := router.Group("/api/v1/transfers")
+	transfersGroup.Use(
+		middleware.ValidateAuth(),
+		middleware.RequireAuthenticatedUser(),
+	)
+
+	// Register routes
+	transfersGroup.POST("", transferController.MakeTransferController)
 }
