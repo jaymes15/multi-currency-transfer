@@ -16,4 +16,8 @@ var (
 		Message: "user not found",
 		Status:  404,
 	}
+	ErrInvalidCredentials = core.ClientError{
+		Message: "invalid username or password",
+		Status:  401,
+	}
 )

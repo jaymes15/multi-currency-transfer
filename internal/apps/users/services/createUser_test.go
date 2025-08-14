@@ -14,10 +14,20 @@ import (
 // MockUserRepository for testing
 type MockUserRepository struct {
 	createUserFunc func(payload requests.CreateUserRequest) (db.CreateUserRow, error)
+	getUserFunc    func(username string) (db.GetUserRow, error)
 }
 
 func (m *MockUserRepository) CreateUser(payload requests.CreateUserRequest) (db.CreateUserRow, error) {
 	return m.createUserFunc(payload)
+}
+
+func (m *MockUserRepository) GetUser(username string) (db.GetUserRow, error) {
+	return m.getUserFunc(username)
+}
+
+func (m *MockUserRepository) GetUserHashedPassword(username string) (string, error) {
+	// Mock implementation - return a hashed password for testing
+	return "$2a$10$hashedpassword123", nil
 }
 
 func TestCreateUser_Success(t *testing.T) {
@@ -32,10 +42,16 @@ func TestCreateUser_Success(t *testing.T) {
 				CreatedAt: time.Now(),
 			}, nil
 		},
+		getUserFunc: func(username string) (db.GetUserRow, error) {
+			return db.GetUserRow{
+				Username: username,
+			}, nil
+		},
 	}
 
 	userService := &UserService{
 		userRespository: mockRepo,
+		tokenMaker:      nil, // nil tokenMaker for now
 	}
 
 	// Test request
@@ -67,6 +83,7 @@ func TestCreateUser_RepositoryError(t *testing.T) {
 
 	userService := &UserService{
 		userRespository: mockRepo,
+		tokenMaker:      nil, // nil tokenMaker for now
 	}
 
 	// Test request

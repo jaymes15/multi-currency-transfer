@@ -250,6 +250,21 @@ func (mr *MockStoreMockRecorder) GetUser(ctx, username any) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUser", reflect.TypeOf((*MockStore)(nil).GetUser), ctx, username)
 }
 
+// GetUserHashedPassword mocks base method.
+func (m *MockStore) GetUserHashedPassword(ctx context.Context, username string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetUserHashedPassword", ctx, username)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetUserHashedPassword indicates an expected call of GetUserHashedPassword.
+func (mr *MockStoreMockRecorder) GetUserHashedPassword(ctx, username any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetUserHashedPassword", reflect.TypeOf((*MockStore)(nil).GetUserHashedPassword), ctx, username)
+}
+
 // ListAccounts mocks base method.
 func (m *MockStore) ListAccounts(ctx context.Context, arg db.ListAccountsParams) ([]db.Account, error) {
 	m.ctrl.T.Helper()

@@ -37,6 +37,8 @@ func Set() Config {
 	flag.DurationVar(&configurations.Db.MaxIdleTime, "db-max-idle-time", 15*time.Minute, "PostgreSQL max connection idle time")
 	flag.IntVar(&configurations.ExchangeRate.ExpiredTimeInMinutes, "exchange-rate-expired-time-in-minutes", exchangeRateExpiredTimeInMinutes, "Exchange rate expired time in minutes")
 	flag.StringVar(&feeFlag, "multi-currency-fee", multiCurrencyFee.String(), "Multi currency fee")
+	flag.StringVar(&configurations.TokenSymmetricKey, "token-symmetric-key", os.Getenv("TOKEN_SYMMETRIC_KEY"), "Token symmetric key")
+	flag.DurationVar(&configurations.AccessTokenDuration, "access-token-duration", 15*time.Minute, "Access token duration")
 
 	// Parse the flags
 	flag.Parse()

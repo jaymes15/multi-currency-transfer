@@ -25,6 +25,7 @@ type Querier interface {
 	GetExchangeRate(ctx context.Context, arg GetExchangeRateParams) (ExchangeRate, error)
 	GetTransfer(ctx context.Context, id int64) (GetTransferRow, error)
 	GetUser(ctx context.Context, username string) (GetUserRow, error)
+	GetUserHashedPassword(ctx context.Context, username string) (string, error)
 	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
 	ListAllAccounts(ctx context.Context, arg ListAllAccountsParams) ([]Account, error)
 	ListEntries(ctx context.Context, arg ListEntriesParams) ([]Entry, error)

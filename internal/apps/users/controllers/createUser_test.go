@@ -85,8 +85,8 @@ func TestCreateUserHTTP_Success(t *testing.T) {
 	store.EXPECT().CreateUser(gomock.Any(), EqCreateUserParams(expectedParams, "password123")).Return(expectedUser, nil).Times(1)
 
 	mockRepo := testhelpers.NewMockUserRepository(store)
-	userService := services.NewUserService(mockRepo)
-	userController := NewUserController(userService)
+	userService := services.NewUserService(mockRepo, nil) // nil tokenMaker for now
+	userController := NewUserController(userService, nil) // nil tokenMaker for now
 
 	router := gin.New()
 	router.POST("/users", userController.CreateUserController)
@@ -112,8 +112,8 @@ func TestCreateUserHTTP_InvalidRequest(t *testing.T) {
 	store := mockdb.NewMockStore(ctrl)
 
 	mockRepo := testhelpers.NewMockUserRepository(store)
-	userService := services.NewUserService(mockRepo)
-	userController := NewUserController(userService)
+	userService := services.NewUserService(mockRepo, nil) // nil tokenMaker for now
+	userController := NewUserController(userService, nil) // nil tokenMaker for now
 
 	router := gin.New()
 	router.POST("/users", userController.CreateUserController)
@@ -144,8 +144,8 @@ func TestCreateUserHTTP_InvalidEmail(t *testing.T) {
 	store := mockdb.NewMockStore(ctrl)
 
 	mockRepo := testhelpers.NewMockUserRepository(store)
-	userService := services.NewUserService(mockRepo)
-	userController := NewUserController(userService)
+	userService := services.NewUserService(mockRepo, nil) // nil tokenMaker for now
+	userController := NewUserController(userService, nil) // nil tokenMaker for now
 
 	router := gin.New()
 	router.POST("/users", userController.CreateUserController)
@@ -178,8 +178,8 @@ func TestCreateUserHTTP_ShortPassword(t *testing.T) {
 	store := mockdb.NewMockStore(ctrl)
 
 	mockRepo := testhelpers.NewMockUserRepository(store)
-	userService := services.NewUserService(mockRepo)
-	userController := NewUserController(userService)
+	userService := services.NewUserService(mockRepo, nil) // nil tokenMaker for now
+	userController := NewUserController(userService, nil) // nil tokenMaker for now
 
 	router := gin.New()
 	router.POST("/users", userController.CreateUserController)
@@ -230,8 +230,8 @@ func TestCreateUserHTTP_DatabaseError(t *testing.T) {
 	store.EXPECT().CreateUser(gomock.Any(), EqCreateUserParams(expectedParams, "password123")).Return(db.CreateUserRow{}, fmt.Errorf("database error")).Times(1)
 
 	mockRepo := testhelpers.NewMockUserRepository(store)
-	userService := services.NewUserService(mockRepo)
-	userController := NewUserController(userService)
+	userService := services.NewUserService(mockRepo, nil) // nil tokenMaker for now
+	userController := NewUserController(userService, nil) // nil tokenMaker for now
 
 	router := gin.New()
 	router.POST("/users", userController.CreateUserController)

@@ -17,10 +17,16 @@ import (
 // MockStore implements the db.Store interface for testing
 type MockStore struct {
 	createUserFunc func(ctx context.Context, arg db.CreateUserParams) (db.CreateUserRow, error)
+	getUserFunc    func(ctx context.Context, username string) (db.GetUserRow, error)
 }
 
 func (m *MockStore) CreateUser(ctx context.Context, arg db.CreateUserParams) (db.CreateUserRow, error) {
 	return m.createUserFunc(ctx, arg)
+}
+
+func (m *MockStore) GetUserHashedPassword(ctx context.Context, username string) (string, error) {
+	// Mock implementation - return a hashed password for testing
+	return "$2a$10$hashedpassword123", nil
 }
 
 // Implement other required methods with empty implementations for testing
