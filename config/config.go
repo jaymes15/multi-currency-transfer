@@ -24,6 +24,7 @@ type Config struct {
 	MultiCurrency struct {
 		Fee decimal.Decimal
 	}
-	TokenSymmetricKey   string
-	AccessTokenDuration time.Duration
+	TokenSymmetricKey    string
+	AccessTokenDuration  time.Duration
+	RefreshTokenDuration time.Duration
 }

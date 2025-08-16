@@ -14,6 +14,7 @@ import (
 	db "lemfi/simplebank/db/sqlc"
 	reflect "reflect"
 
+	uuid "github.com/google/uuid"
 	decimal "github.com/shopspring/decimal"
 	gomock "go.uber.org/mock/gomock"
 )
@@ -55,6 +56,20 @@ func (m *MockStore) AddAccountBalance(ctx context.Context, arg db.AddAccountBala
 func (mr *MockStoreMockRecorder) AddAccountBalance(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "AddAccountBalance", reflect.TypeOf((*MockStore)(nil).AddAccountBalance), ctx, arg)
+}
+
+// BlockSession mocks base method.
+func (m *MockStore) BlockSession(ctx context.Context, id uuid.UUID) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "BlockSession", ctx, id)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// BlockSession indicates an expected call of BlockSession.
+func (mr *MockStoreMockRecorder) BlockSession(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "BlockSession", reflect.TypeOf((*MockStore)(nil).BlockSession), ctx, id)
 }
 
 // CreateAccount mocks base method.
@@ -100,6 +115,21 @@ func (m *MockStore) CreateExchangeRate(ctx context.Context, arg db.CreateExchang
 func (mr *MockStoreMockRecorder) CreateExchangeRate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateExchangeRate", reflect.TypeOf((*MockStore)(nil).CreateExchangeRate), ctx, arg)
+}
+
+// CreateSession mocks base method.
+func (m *MockStore) CreateSession(ctx context.Context, arg db.CreateSessionParams) (db.Session, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateSession", ctx, arg)
+	ret0, _ := ret[0].(db.Session)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateSession indicates an expected call of CreateSession.
+func (mr *MockStoreMockRecorder) CreateSession(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateSession", reflect.TypeOf((*MockStore)(nil).CreateSession), ctx, arg)
 }
 
 // CreateTransfer mocks base method.
@@ -218,6 +248,21 @@ func (m *MockStore) GetExchangeRate(ctx context.Context, arg db.GetExchangeRateP
 func (mr *MockStoreMockRecorder) GetExchangeRate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetExchangeRate", reflect.TypeOf((*MockStore)(nil).GetExchangeRate), ctx, arg)
+}
+
+// GetSession mocks base method.
+func (m *MockStore) GetSession(ctx context.Context, id uuid.UUID) (db.GetSessionRow, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSession", ctx, id)
+	ret0, _ := ret[0].(db.GetSessionRow)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSession indicates an expected call of GetSession.
+func (mr *MockStoreMockRecorder) GetSession(ctx, id any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSession", reflect.TypeOf((*MockStore)(nil).GetSession), ctx, id)
 }
 
 // GetTransfer mocks base method.
@@ -398,6 +443,20 @@ func (m *MockStore) UpdateExchangeRate(ctx context.Context, arg db.UpdateExchang
 func (mr *MockStoreMockRecorder) UpdateExchangeRate(ctx, arg any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateExchangeRate", reflect.TypeOf((*MockStore)(nil).UpdateExchangeRate), ctx, arg)
+}
+
+// UpdateSession mocks base method.
+func (m *MockStore) UpdateSession(ctx context.Context, arg db.UpdateSessionParams) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "UpdateSession", ctx, arg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// UpdateSession indicates an expected call of UpdateSession.
+func (mr *MockStoreMockRecorder) UpdateSession(ctx, arg any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UpdateSession", reflect.TypeOf((*MockStore)(nil).UpdateSession), ctx, arg)
 }
 
 // UpdateUser mocks base method.

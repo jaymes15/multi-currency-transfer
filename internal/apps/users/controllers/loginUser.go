@@ -43,8 +43,7 @@ func (userController *UserController) LoginUserController(c *gin.Context) {
 	config.Logger.Info("User logged in successfully", "username", req.Username)
 
 	responseData := responseHandler.Envelope{
-		"access_token":            response.AccessToken,
-		"access_token_expires_at": response.AccessTokenExpiresAt,
+		"tokens": response,
 	}
 
 	err = responseHandler.WriteJSON(c.Writer, http.StatusOK, responseData, nil)

@@ -39,11 +39,32 @@ func (userService *UserService) LoginUser(payload requests.LoginUserRequest) (re
 		return responses.LoginUserResponse{}, err
 	}
 
+	// Create refresh token
+	refreshTokenDuration := config.Get().RefreshTokenDuration
+	refreshToken, refreshTokenPayload, err := userService.tokenMaker.CreateToken(
+		payload.Username,
+		"user",
+		refreshTokenDuration,
+		token.TokenTypeRefreshToken,
+	)
+	if err != nil {
+		config.Logger.Error("Failed to create refresh token", "error", err.Error(), "username", payload.Username)
+		return responses.LoginUserResponse{}, err
+	}
+
+	err = userService.userRespository.CreateSession(payload.Username, refreshTokenPayload.ID, refreshToken, refreshTokenPayload.ExpiredAt)
+	if err != nil {
+		config.Logger.Error("Failed to create session", "error", err.Error(), "username", payload.Username)
+		return responses.LoginUserResponse{}, err
+	}
+
 	config.Logger.Info("User logged in successfully", "username", payload.Username)
 
 	response := responses.LoginUserResponse{
-		AccessToken:          accessToken,
-		AccessTokenExpiresAt: tokenPayload.ExpiredAt,
+		AccessToken:           accessToken,
+		AccessTokenExpiresAt:  tokenPayload.ExpiredAt,
+		RefreshToken:          refreshToken,
+		RefreshTokenExpiresAt: refreshTokenPayload.ExpiredAt,
 	}
 
 	config.Logger.Info("User login service completed", "username", payload.Username)

@@ -39,6 +39,7 @@ func Set() Config {
 	flag.StringVar(&feeFlag, "multi-currency-fee", multiCurrencyFee.String(), "Multi currency fee")
 	flag.StringVar(&configurations.TokenSymmetricKey, "token-symmetric-key", os.Getenv("TOKEN_SYMMETRIC_KEY"), "Token symmetric key")
 	flag.DurationVar(&configurations.AccessTokenDuration, "access-token-duration", 15*time.Minute, "Access token duration")
+	flag.DurationVar(&configurations.RefreshTokenDuration, "refresh-token-duration", 7*24*time.Hour, "Refresh token duration")
 
 	// Parse the flags
 	flag.Parse()

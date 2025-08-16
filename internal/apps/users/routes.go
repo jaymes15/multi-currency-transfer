@@ -20,6 +20,8 @@ func Routes(router *gin.Engine) {
 	// Public routes (no authentication required)
 	router.POST("/api/v1/users", userController.CreateUserController)
 	router.POST("/api/v1/users/login", userController.LoginUserController)
+	router.POST("/api/v1/users/refresh", userController.RefreshTokenController)
+	router.POST("/api/v1/users/logout", userController.LogoutController)
 
 	// Protected routes (authentication required)
 	router.GET("/api/v1/users/me", middleware.ValidateAuth(), middleware.RequireAuthenticatedUser(), userController.GetUserController)
