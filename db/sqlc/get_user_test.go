@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/stretchr/testify/require"
+    "lemfi/simplebank/util"
 )
 
 func TestGetUser(t *testing.T) {
@@ -45,10 +46,10 @@ func TestGetUserEmptyUsername(t *testing.T) {
 
 func TestGetUserSpecialCharacters(t *testing.T) {
 	// Create a user with special characters in username
-	username := "user-with_special.chars_get123"
+    username := "user-with_special.chars_get123_" + util.RandomOwner()
 	hashedPassword := "hashedpassword123"
 	fullName := "Special User Get"
-	email := "specialget@example.com"
+    email := util.RandomEmail()
 
 	// Create the user
 	createdUser, err := testQueries.CreateUser(context.Background(), CreateUserParams{
@@ -73,10 +74,10 @@ func TestGetUserSpecialCharacters(t *testing.T) {
 
 func TestGetUserCaseSensitivity(t *testing.T) {
 	// Create a user with specific case
-	username := "TestUserCase"
+    username := "TestUserCase_" + util.RandomOwner()
 	hashedPassword := "hashedpassword123"
 	fullName := "Case Test User"
-	email := "case@example.com"
+    email := util.RandomEmail()
 
 	// Create the user
 	_, err := testQueries.CreateUser(context.Background(), CreateUserParams{
@@ -89,7 +90,7 @@ func TestGetUserCaseSensitivity(t *testing.T) {
 
 	// Try to get user with different case (should fail if case-sensitive)
 	differentCaseUsername := "testusercase"
-	user, err := testQueries.GetUser(context.Background(), differentCaseUsername)
+    user, err := testQueries.GetUser(context.Background(), differentCaseUsername)
 
 	// PostgreSQL is case-sensitive by default, so this should fail
 	require.Error(t, err)

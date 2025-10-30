@@ -40,6 +40,7 @@ func Set() Config {
 	flag.StringVar(&configurations.TokenSymmetricKey, "token-symmetric-key", os.Getenv("TOKEN_SYMMETRIC_KEY"), "Token symmetric key")
 	flag.DurationVar(&configurations.AccessTokenDuration, "access-token-duration", 15*time.Minute, "Access token duration")
 	flag.DurationVar(&configurations.RefreshTokenDuration, "refresh-token-duration", 7*24*time.Hour, "Refresh token duration")
+	flag.StringVar(&configurations.GRPCServerAddress, "grpc-server-address", os.Getenv("GRPC_SERVER_ADDRESS"), "gRPC server address")
 
 	// Parse the flags
 	flag.Parse()
@@ -58,6 +59,11 @@ func Set() Config {
 
 	// Set CORS Trusted Origins
 	configurations.Cors.TrustedOrigins = strings.Fields(os.Getenv("TRUSTED_ORIGINS"))
+
+	// Set default gRPC server address if not provided
+	if configurations.GRPCServerAddress == "" {
+		configurations.GRPCServerAddress = ":9090"
+	}
 
 	return configurations
 }

@@ -10,6 +10,7 @@ import (
 	userErrors "lemfi/simplebank/internal/apps/users/errors"
 	requests "lemfi/simplebank/internal/apps/users/requests"
 
+	"github.com/google/uuid"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/require"
 )
@@ -30,6 +31,14 @@ func (m *MockStore) GetUserHashedPassword(ctx context.Context, username string) 
 }
 
 // Implement other required methods with empty implementations for testing
+func (m *MockStore) BlockSession(ctx context.Context, id uuid.UUID) error { return nil }
+func (m *MockStore) CreateSession(ctx context.Context, arg db.CreateSessionParams) (db.Session, error) {
+	return db.Session{}, nil
+}
+func (m *MockStore) GetSession(ctx context.Context, id uuid.UUID) (db.GetSessionRow, error) {
+	return db.GetSessionRow{}, nil
+}
+func (m *MockStore) UpdateSession(ctx context.Context, arg db.UpdateSessionParams) error { return nil }
 func (m *MockStore) CreateAccount(ctx context.Context, arg db.CreateAccountParams) (db.Account, error) {
 	return db.Account{}, nil
 }

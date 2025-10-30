@@ -1,0 +1,25 @@
+syntax = "proto3";
+import "rpc_create_user.proto";
+import "rpc_login_user.proto";
+import "google/api/annotations.proto";
+
+
+package pb;
+
+option go_package = "lemfi/simplebank/pb";
+
+
+service SimpleBankService {
+    rpc CreateUser (CreateUserRequest) returns (CreateUserResponse){
+        option (google.api.http) = {
+            post: "/api/v1/users"
+            body: "*"
+        };
+    };
+    rpc LoginUser (LoginUserRequest) returns (LoginUserResponse){
+        option (google.api.http) = {
+            post: "/api/v1/users/login"
+            body: "*"
+        };
+    };
+}

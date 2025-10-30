@@ -13,7 +13,6 @@ import (
 
 type Querier interface {
 	AddAccountBalance(ctx context.Context, arg AddAccountBalanceParams) (decimal.Decimal, error)
-	BlockSession(ctx context.Context, id uuid.UUID) error
 	CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error)
 	CreateEntry(ctx context.Context, arg CreateEntryParams) (Entry, error)
 	CreateExchangeRate(ctx context.Context, arg CreateExchangeRateParams) (ExchangeRate, error)
@@ -38,7 +37,6 @@ type Querier interface {
 	ListUsers(ctx context.Context) ([]ListUsersRow, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error)
 	UpdateExchangeRate(ctx context.Context, arg UpdateExchangeRateParams) (ExchangeRate, error)
-	UpdateSession(ctx context.Context, arg UpdateSessionParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (UpdateUserRow, error)
 }
 

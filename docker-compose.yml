@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: secret
       POSTGRES_DB: simple_bank
     ports:
-      - "5432:5432"
+      - "5431:5431"
     # volumes:
     #   - postgres_data:/var/lib/postgresql/data
     networks:
@@ -21,6 +21,7 @@ services:
     restart: always
     ports:
       - 4000:4000
+      - 9090:9090
     env_file: .env
     volumes:
       - .:/app

@@ -9,6 +9,7 @@ import (
 	requests "lemfi/simplebank/internal/apps/users/requests"
 
 	"github.com/stretchr/testify/require"
+    "github.com/google/uuid"
 )
 
 // MockUserRepository for testing
@@ -28,6 +29,18 @@ func (m *MockUserRepository) GetUser(username string) (db.GetUserRow, error) {
 func (m *MockUserRepository) GetUserHashedPassword(username string) (string, error) {
 	// Mock implementation - return a hashed password for testing
 	return "$2a$10$hashedpassword123", nil
+}
+
+func (m *MockUserRepository) CreateSession(username string, refreshTokenID uuid.UUID, refreshToken string, expiresAt time.Time) error {
+    return nil
+}
+
+func (m *MockUserRepository) GetSession(refreshTokenID uuid.UUID) (db.GetSessionRow, error) {
+    return db.GetSessionRow{}, nil
+}
+
+func (m *MockUserRepository) BlockSession(sessionID uuid.UUID) error {
+    return nil
 }
 
 func TestCreateUser_Success(t *testing.T) {

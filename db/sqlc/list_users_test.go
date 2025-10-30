@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+    "lemfi/simplebank/util"
 )
 
 func TestListUsers(t *testing.T) {
@@ -54,32 +55,32 @@ func TestListUsersEmpty(t *testing.T) {
 
 func TestListUsersOrdering(t *testing.T) {
 	// Create users with specific usernames to test ordering
-	username1 := "a_user_first"
-	username2 := "b_user_second"
-	username3 := "c_user_third"
+    username1 := "a_user_first_" + util.RandomOwner()
+    username2 := "b_user_second_" + util.RandomOwner()
+    username3 := "c_user_third_" + util.RandomOwner()
 
 	// Create users in reverse order to test SQL ordering
-	_, err := testQueries.CreateUser(context.Background(), CreateUserParams{
+    _, err := testQueries.CreateUser(context.Background(), CreateUserParams{
 		Username:       username3,
 		HashedPassword: "hashedpassword123",
 		FullName:       "Third User",
-		Email:          "third@example.com",
+        Email:          util.RandomEmail(),
 	})
 	require.NoError(t, err)
 
-	_, err = testQueries.CreateUser(context.Background(), CreateUserParams{
+    _, err = testQueries.CreateUser(context.Background(), CreateUserParams{
 		Username:       username1,
 		HashedPassword: "hashedpassword123",
 		FullName:       "First User",
-		Email:          "first@example.com",
+        Email:          util.RandomEmail(),
 	})
 	require.NoError(t, err)
 
-	_, err = testQueries.CreateUser(context.Background(), CreateUserParams{
+    _, err = testQueries.CreateUser(context.Background(), CreateUserParams{
 		Username:       username2,
 		HashedPassword: "hashedpassword123",
 		FullName:       "Second User",
-		Email:          "second@example.com",
+        Email:          util.RandomEmail(),
 	})
 	require.NoError(t, err)
 

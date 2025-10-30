@@ -1,0 +1,20 @@
+syntax = "proto3";
+import "google/protobuf/timestamp.proto";
+
+package pb;
+
+option go_package = "lemfi/simplebank/pb";
+
+message User {
+    string username = 1;
+    string full_name = 2;
+    string email = 3;
+    string password = 4;
+    google.protobuf.Timestamp password_changed_at = 5;
+    google.protobuf.Timestamp created_at = 6;
+    google.protobuf.Timestamp updated_at = 7;
+}
+
+
+
+

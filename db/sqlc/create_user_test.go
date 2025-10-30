@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"lemfi/simplebank/util"
+
 	"github.com/stretchr/testify/require"
 )
 
@@ -100,10 +102,10 @@ func TestCreateUserEmptyFields(t *testing.T) {
 
 func TestCreateUserSpecialCharacters(t *testing.T) {
 	// Test with special characters in username
-	username := "test-user_123"
+	username := "test-user_123_" + util.RandomOwner()
 	hashedPassword := "hashedpassword123"
 	fullName := "Test User"
-	email := "test@example.com"
+	email := util.RandomEmail()
 
 	user, err := testQueries.CreateUser(context.Background(), CreateUserParams{
 		Username:       username,
@@ -116,14 +118,14 @@ func TestCreateUserSpecialCharacters(t *testing.T) {
 	require.Equal(t, username, user.Username)
 
 	// Test with special characters in full name
-	username2 := "testuser2"
+	username2 := "testuser2_" + util.RandomOwner()
 	fullName2 := "Test User Jr. (II)"
 
 	user2, err := testQueries.CreateUser(context.Background(), CreateUserParams{
 		Username:       username2,
 		HashedPassword: hashedPassword,
 		FullName:       fullName2,
-		Email:          "test2@example.com",
+		Email:          util.RandomEmail(),
 	})
 
 	require.NoError(t, err)
